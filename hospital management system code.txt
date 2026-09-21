@@ -1,4 +1,10 @@
 -- ==============================================================================
+-- HOSPITAL MANAGEMENT SYSTEM - COMPLETE SQL SCRIPT
+-- This entire file is paste-and-run: every explanation below is a SQL comment.
+-- Compatible with Oracle / PostgreSQL. (MySQL notes included where relevant.)
+-- ==============================================================================
+
+-- ==============================================================================
 -- 1. BASE INDEPENDENT TABLES & NORMALIZED ROOM CHAIN
 -- ==============================================================================
 
@@ -17,7 +23,7 @@ CREATE TABLE ROOMS (
     CONSTRAINT fk_rooms_capacity FOREIGN KEY (Capacity) REFERENCES ROOMS_B(Capacity)
 );
 
--- From: EMPLOYEE (Emp_id, F_name, L_name, Address, Contact_no, Age)
+-- From: EMPLOYEE (Emp_id, F_name, L_name, Gender, Address, Contact_no, Age)
 CREATE TABLE EMPLOYEE (
     Emp_id INT PRIMARY KEY,
     F_name VARCHAR(50),
@@ -187,16 +193,8 @@ CREATE TABLE NURSE_HANDLES_ROOMS (
     CONSTRAINT fk_nhr_room FOREIGN KEY (Room_no) REFERENCES ROOMS(Room_no)
 );
 
-
-
-----------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
 -- ==============================================================================
--- 1. BASE INDEPENDENT TABLES & NORMALIZED ROOM CHAIN
+-- SEED DATA
 -- ==============================================================================
 
 INSERT INTO ROOMS_B (Capacity, Availability) VALUES
@@ -232,10 +230,6 @@ INSERT INTO EMPLOYEE (Emp_id, F_name, L_name, Gender, Address, Contact_no, Age) 
 (14, 'Morty', 'Smith', 'M', '101 Sci-Fi Dr, WA', '555-0114', 25),
 (15, 'Rick', 'Sanchez', 'M', '102 Sci-Fi Dr, WA', '555-0115', 65);
 
--- ==============================================================================
--- 2. NORMALIZED PATIENT CHAIN
--- ==============================================================================
-
 INSERT INTO PATIENT_C (Address, Room_no) VALUES
 ('789 Pine St', 101),
 ('456 Oak St', 102),
@@ -261,10 +255,6 @@ INSERT INTO PATIENT (Patient_id, F_name, L_name, Gender, Phone, In_date, Out_dat
 (1005, 'Arthur', 'Curry', 'M', '555-2005', DATE '2026-09-10', DATE '2026-09-12'),
 (1006, 'Victor', 'Stone', 'M', '555-2006', DATE '2026-09-11', NULL);
 
--- ==============================================================================
--- 3. EMPLOYEE SUBCLASSES
--- ==============================================================================
-
 -- Supervisor_id references Emp_id within DOCTOR table (Recursive)
 INSERT INTO DOCTOR (Emp_id, Specialization, Designation, Supervisor_id) VALUES
 (1, 'Diagnostics', 'Head of Dept', NULL),
@@ -286,10 +276,6 @@ INSERT INTO PHARMACIST (Emp_id, Clearance_level) VALUES
 (13, 'Level 1'),
 (14, 'Level 3'),
 (15, 'Level 2');
-
--- ==============================================================================
--- 4. WEAK ENTITIES
--- ==============================================================================
 
 INSERT INTO PERSONS (Patient_id, Name, Sex, Age, Relationship) VALUES
 (1001, 'Damian Wayne', 'M', 14, 'Son'),
@@ -321,10 +307,6 @@ INSERT INTO BILLS (B_id, P_id, Amount, I_amount) VALUES
 (803, 1003, 2000.00, 0.00),
 (804, 1004, 3000.00, 2500.00),
 (805, 1005, 750.00, 750.00);
-
--- ==============================================================================
--- 5. ASSOCIATIONS & M:N RELATIONSHIPS
--- ==============================================================================
 
 INSERT INTO MEDICAL_RECORDS (R_id, P_id, Purchase_date) VALUES
 (901, 1001, DATE '2026-09-02'),
@@ -367,25 +349,26 @@ INSERT INTO NURSE_HANDLES_ROOMS (Emp_id, Room_no) VALUES
 (10, 106),
 (8, 101);
 
+-- ==============================================================================
+-- SAMPLE QUERIES
+-- ==============================================================================
 
-----------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-1. Basic Filtering (WHERE clause)
-This query retrieves the room numbers and capacities of all rooms that are specifically designated as 'General' wards.
-
+-- ------------------------------------------------------------------------------
+-- 1. Basic Filtering (WHERE clause)
+-- This query retrieves the room numbers and capacities of all rooms that are
+-- specifically designated as 'General' wards.
+-- ------------------------------------------------------------------------------
 SELECT 
     Room_no, 
     Capacity 
 FROM ROOMS 
 WHERE Type = 'General';
 
-==================================================================
-
-2. Finding Missing Data (IS NULL)
-This query identifies all patients who are currently admitted to the hospital (meaning their discharge date has not yet been recorded).
-
-
+-- ------------------------------------------------------------------------------
+-- 2. Finding Missing Data (IS NULL)
+-- This query identifies all patients who are currently admitted to the hospital
+-- (meaning their discharge date has not yet been recorded).
+-- ------------------------------------------------------------------------------
 SELECT 
     Patient_id, 
     F_name, 
@@ -394,24 +377,22 @@ SELECT
 FROM PATIENT 
 WHERE Out_date IS NULL;
 
-==================================================================
-
-3. Simple Aggregation (GROUP BY)
-This query counts the number of nurses assigned to each type of shift (e.g., Morning, Night).
-
-
+-- ------------------------------------------------------------------------------
+-- 3. Simple Aggregation (GROUP BY)
+-- This query counts the number of nurses assigned to each type of shift
+-- (e.g., Morning, Night).
+-- ------------------------------------------------------------------------------
 SELECT 
     Shift_type, 
     COUNT(Emp_id) AS Total_Nurses 
 FROM NURSE 
 GROUP BY Shift_type;
 
-==================================================================
-
-4. Sorting Data (ORDER BY)
-This query retrieves a list of all employees over the age of 40, sorted from oldest to youngest.
-
-
+-- ------------------------------------------------------------------------------
+-- 4. Sorting Data (ORDER BY)
+-- This query retrieves a list of all employees over the age of 40, sorted from
+-- oldest to youngest.
+-- ------------------------------------------------------------------------------
 SELECT 
     Emp_id, 
     F_name, 
@@ -421,12 +402,11 @@ FROM EMPLOYEE
 WHERE Age > 40 
 ORDER BY Age DESC;
 
-==================================================================
-
-5. Simple 2-Table JOIN
-This query fetches the names and clearance levels of all pharmacists by linking the base EMPLOYEE table with the PHARMACIST subclass table.
-
-
+-- ------------------------------------------------------------------------------
+-- 5. Simple 2-Table JOIN
+-- This query fetches the names and clearance levels of all pharmacists by
+-- linking the base EMPLOYEE table with the PHARMACIST subclass table.
+-- ------------------------------------------------------------------------------
 SELECT 
     e.F_name, 
     e.L_name, 
@@ -434,13 +414,12 @@ SELECT
 FROM EMPLOYEE e
 JOIN PHARMACIST p ON e.Emp_id = p.Emp_id;
 
-==================================================================
-
-6. Multi-Table JOIN (4 Tables) - 'Consulted_by' Relationship
-This query lists every patient along with the doctor they consulted and the doctor's
-specialization, by traversing PATIENT -> APPOINTMENT_B -> DOCTOR -> EMPLOYEE.
-
-
+-- ------------------------------------------------------------------------------
+-- 6. Multi-Table JOIN (4 Tables) - 'Consulted_by' Relationship
+-- This query lists every patient along with the doctor they consulted and the
+-- doctor's specialization, by traversing PATIENT -> APPOINTMENT_B -> DOCTOR ->
+-- EMPLOYEE.
+-- ------------------------------------------------------------------------------
 SELECT 
     p.Patient_id,
     p.F_name || ' ' || p.L_name AS Patient_Name,
@@ -452,13 +431,12 @@ JOIN DOCTOR d ON ab.D_id = d.Emp_id
 JOIN EMPLOYEE e ON d.Emp_id = e.Emp_id
 ORDER BY p.Patient_id;
 
-==================================================================
-
-7. LEFT JOIN (Outer Join)
-This query lists all patients with their bills, but also includes patients who do
-not have any bill yet (e.g., newly admitted patients). Their bill columns are NULL.
-
-
+-- ------------------------------------------------------------------------------
+-- 7. LEFT JOIN (Outer Join)
+-- This query lists all patients with their bills, but also includes patients
+-- who do not have any bill yet (e.g., newly admitted patients). Their bill
+-- columns are NULL.
+-- ------------------------------------------------------------------------------
 SELECT 
     p.Patient_id,
     p.F_name,
@@ -470,13 +448,12 @@ FROM PATIENT p
 LEFT JOIN BILLS b ON p.Patient_id = b.P_id
 ORDER BY p.Patient_id;
 
-==================================================================
-
-8. Aggregation with HAVING
-This query computes the total billed amount and insurance amount per patient and
-returns only those patients whose total bill exceeds 1500, sorted high to low.
-
-
+-- ------------------------------------------------------------------------------
+-- 8. Aggregation with HAVING
+-- This query computes the total billed amount and insurance amount per patient
+-- and returns only those patients whose total bill exceeds 1500, sorted high
+-- to low.
+-- ------------------------------------------------------------------------------
 SELECT 
     p.Patient_id,
     p.F_name,
@@ -489,13 +466,12 @@ GROUP BY p.Patient_id, p.F_name, p.L_name
 HAVING SUM(b.Amount) > 1500
 ORDER BY Total_Billed DESC;
 
-==================================================================
-
-9. Recursive JOIN (Unary Relationship) - 'Supervision'
-This query resolves the recursive Supervision relationship on DOCTOR by joining
-the table to itself, showing each doctor alongside their supervisor's name.
-
-
+-- ------------------------------------------------------------------------------
+-- 9. Recursive JOIN (Unary Relationship) - 'Supervision'
+-- This query resolves the recursive Supervision relationship on DOCTOR by
+-- joining the table to itself, showing each doctor alongside their supervisor's
+-- name.
+-- ------------------------------------------------------------------------------
 SELECT 
     d.Emp_id AS Doctor_ID,
     doc.F_name || ' ' || doc.L_name AS Doctor_Name,
@@ -507,13 +483,11 @@ LEFT JOIN DOCTOR s ON d.Supervisor_id = s.Emp_id
 LEFT JOIN EMPLOYEE sup ON s.Emp_id = sup.Emp_id
 ORDER BY d.Emp_id;
 
-==================================================================
-
-10. Subquery with IN (Weak Entity Check)
-This query finds all patients who have at least one dependent registered in the
-weak entity PERSONS ('Dependent_On' relationship).
-
-
+-- ------------------------------------------------------------------------------
+-- 10. Subquery with IN (Weak Entity Check)
+-- This query finds all patients who have at least one dependent registered in
+-- the weak entity PERSONS ('Dependent_On' relationship).
+-- ------------------------------------------------------------------------------
 SELECT 
     Patient_id,
     F_name,
@@ -522,13 +496,11 @@ SELECT
 FROM PATIENT
 WHERE Patient_id IN (SELECT Patient_id FROM PERSONS);
 
-==================================================================
-
-11. Subquery with Aggregate Function
-This query returns the bills whose amount is strictly greater than the average
-bill amount across the whole hospital.
-
-
+-- ------------------------------------------------------------------------------
+-- 11. Subquery with Aggregate Function
+-- This query returns the bills whose amount is strictly greater than the
+-- average bill amount across the whole hospital.
+-- ------------------------------------------------------------------------------
 SELECT 
     B_id,
     P_id,
@@ -537,14 +509,13 @@ SELECT
 FROM BILLS
 WHERE Amount > (SELECT AVG(Amount) FROM BILLS);
 
-==================================================================
-
-12. Five-Table JOIN - Nurse 'Handles' Rooms (M:N)
-This query shows which nurse handles which room, including the nurse's shift,
-room type and availability, by joining the M:N table with both subclass and
-base tables (NURSE_HANDLES_ROOMS -> NURSE -> EMPLOYEE -> ROOMS -> ROOMS_B).
-
-
+-- ------------------------------------------------------------------------------
+-- 12. Five-Table JOIN - Nurse 'Handles' Rooms (M:N)
+-- This query shows which nurse handles which room, including the nurse's
+-- shift, room type and availability, by joining the M:N table with both
+-- subclass and base tables (NURSE_HANDLES_ROOMS -> NURSE -> EMPLOYEE -> ROOMS
+-- -> ROOMS_B).
+-- ------------------------------------------------------------------------------
 SELECT 
     e.Emp_id,
     e.F_name || ' ' || e.L_name AS Nurse_Name,
@@ -559,13 +530,11 @@ JOIN ROOMS r ON nhr.Room_no = r.Room_no
 JOIN ROOMS_B rb ON r.Capacity = rb.Capacity
 ORDER BY e.Emp_id, r.Room_no;
 
-==================================================================
-
-13. EXISTS Correlated Subquery
-This query finds patients who are currently admitted (no discharge date) AND
-already have at least one test report recorded.
-
-
+-- ------------------------------------------------------------------------------
+-- 13. EXISTS Correlated Subquery
+-- This query finds patients who are currently admitted (no discharge date) AND
+-- already have at least one test report recorded.
+-- ------------------------------------------------------------------------------
 SELECT 
     p.Patient_id,
     p.F_name,
@@ -578,14 +547,12 @@ WHERE p.Out_date IS NULL
         WHERE tr.Patient_id = p.Patient_id
   );
 
-==================================================================
-
-14. Composite-Key JOIN - Pharmacist 'Maintains' Medical Records
-This query joins MEDICAL_RECORDS with RECORD_HANDLER on the composite key
-(P_id, Purchase_date) to show who handled each record, plus the pharmacist's
-clearance level from the subclass table.
-
-
+-- ------------------------------------------------------------------------------
+-- 14. Composite-Key JOIN - Pharmacist 'Maintains' Medical Records
+-- This query joins MEDICAL_RECORDS with RECORD_HANDLER on the composite key
+-- (P_id, Purchase_date) to show who handled each record, plus the pharmacist's
+-- clearance level from the subclass table.
+-- ------------------------------------------------------------------------------
 SELECT 
     mr.R_id,
     p.F_name || ' ' || p.L_name AS Patient_Name,
@@ -600,13 +567,13 @@ JOIN EMPLOYEE e ON ph.Emp_id = e.Emp_id
 JOIN PATIENT p ON mr.P_id = p.Patient_id
 ORDER BY mr.Purchase_date;
 
-==================================================================
-
-15. CASE Expression (Derived Column)
-This query computes what percentage of each bill was covered by insurance,
-using a CASE expression to guard against division by zero.
-
-
+-- ------------------------------------------------------------------------------
+-- 15. CASE Expression (Derived Column)
+-- This query computes what percentage of each bill was covered by insurance,
+-- using a CASE expression to guard against division by zero.
+-- Note: in Oracle, I_amount/Amount on NUMBER columns is fine; the ROUND keeps
+-- the output tidy.
+-- ------------------------------------------------------------------------------
 SELECT 
     B_id,
     P_id,
@@ -618,13 +585,13 @@ SELECT
     END AS Insurance_Coverage_Pct
 FROM BILLS;
 
-==================================================================
-
-16. Date Arithmetic (Length of Stay)
-This query calculates how many days each discharged patient stayed in the
-hospital. (For MySQL, replace the expression with DATEDIFF(Out_date, In_date).)
-
-
+-- ------------------------------------------------------------------------------
+-- 16. Date Arithmetic (Length of Stay)
+-- This query calculates how many days each discharged patient stayed in the
+-- hospital.
+-- Note: (Out_date - In_date) works in Oracle and PostgreSQL.
+-- For MySQL, replace it with DATEDIFF(Out_date, In_date).
+-- ------------------------------------------------------------------------------
 SELECT 
     Patient_id,
     F_name,
@@ -635,14 +602,13 @@ SELECT
 FROM PATIENT
 WHERE Out_date IS NOT NULL;
 
-==================================================================
-
-17. CREATE VIEW + Querying a View
-This query creates a reusable view of all currently admitted patients and then
-queries it. Views abstract the base logic and can be joined like real tables.
-
-
-CREATE VIEW CURRENT_IN_PATIENTS AS
+-- ------------------------------------------------------------------------------
+-- 17. CREATE VIEW + Querying a View
+-- This creates a reusable view of all currently admitted patients and then
+-- queries it. Views abstract the base logic and can be joined like real
+-- tables. CREATE OR REPLACE makes the script safe to run more than once.
+-- ------------------------------------------------------------------------------
+CREATE OR REPLACE VIEW CURRENT_IN_PATIENTS AS
 SELECT 
     Patient_id,
     F_name || ' ' || L_name AS Patient_Name,
@@ -656,5 +622,4 @@ WHERE Out_date IS NULL;
 SELECT * 
 FROM CURRENT_IN_PATIENTS;
 
-==================================================================
-
+-- ============================== END OF SCRIPT =================================

@@ -18,6 +18,17 @@ The hand-drawn EER diagram (2 pages):
 
 ```
 .
+├── frontend/                          # React frontend application
+│   ├── src/
+│   │   ├── components/                # Reusable UI components (Layout, DataTable, etc.)
+│   │   ├── data/                      # Mock data matching the SQL schema
+│   │   ├── pages/                     # Page components (Dashboard, Patients, etc.)
+│   │   ├── App.jsx                    # Root component with routing
+│   │   ├── main.jsx                   # Entry point
+│   │   └── index.css                  # Tailwind CSS styles
+│   ├── index.html                     # HTML template
+│   ├── vite.config.js                 # Vite configuration
+│   └── package.json                   # Frontend dependencies
 ├── er_diagram_page1.jpg               # EER diagram (page 1)
 ├── er_diagram_page2.jpg               # EER diagram (page 2)
 ├── hospital management system code.txt # Full SQL script (DDL + seed data + 17 queries)
@@ -73,13 +84,50 @@ VALID (P_id, Valid) ← BILLS (B_id, P_id, Amount, I_amount)
 ## 🚀 Getting Started
 
 ### Prerequisites
-Any standards-compliant RDBMS: **Oracle**, **MySQL**, **PostgreSQL**, or **SQLite 3.9+**.
+- **Node.js** 18 or later (includes npm)
+- Any standards-compliant RDBMS: **Oracle**, **MySQL**, **PostgreSQL**, or **SQLite 3.9+** (for the SQL script)
 
-### Setup
+---
+
+### Running the Frontend
+
+1. Navigate into the frontend directory:
+   ```bash
+   cd frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open your browser and go to **http://localhost:5173**
+
+That's it! The frontend uses mock data that mirrors the SQL schema, so you can explore all pages without setting up a database.
+
+#### Frontend Commands
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start development server with hot reload |
+| `npm run build` | Build for production (output in `dist/`) |
+| `npm run preview` | Preview the production build locally |
+
+---
+
+### Running the SQL Script (Backend)
+
 1. Open your SQL client (SQL*Plus, MySQL Workbench, pgAdmin, DBeaver, etc.).
-2. Run the DDL section (Section 1–5) of `hospital management system code.txt` to create all tables.
-3. Run the seed-data section to populate the hospital with sample employees, patients, rooms, bills and records.
-4. Run any of the 17 sample queries to explore the data.
+2. Open `hospital management system code.txt`, **select all → copy → paste into the SQL editor → execute**.
+3. Every line in the file is valid SQL: all headings and explanations are SQL comments (`--`), so nothing throws a syntax error.
+4. The script creates all 18 tables, inserts seed data, and runs all 17 sample queries in order.
+
+> **MySQL users:** two dialect notes — queries 6, 9, 12, 14, 17 use `||` concatenation (MySQL needs `CONCAT(a, b)`), and query 16 uses `(Out_date - In_date)` (MySQL needs `DATEDIFF(Out_date, In_date)`). Query 15's integer division `I_amount/Amount` also differs on MySQL — wrap as `(I_amount * 100.0 / Amount)`. Everything else runs as-is.
 
 ### Re-runnability tip
 If your RDBMS supports it, wrap the DDL with drop statements so the script can be replayed:
@@ -143,6 +191,14 @@ The script contains **17 worked-out queries**, each with an explanation:
 ---
 
 ## 🛠️ Tech Stack
+
+### Frontend
+- **React 19** with Vite 8
+- **Tailwind CSS 4** for styling
+- **React Router 7** for client-side routing
+- **Lucide React** for icons
+
+### Backend (Database)
 - **SQL** (ANSI-compatible, tested patterns for Oracle / MySQL / PostgreSQL)
 - **EER modeling** with specialization/weak-entity mapping
 

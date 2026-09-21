@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { patients, getPatientDetails, persons, testReports, bills } from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { patientsApi, personsApi, testReportsApi, billsApi } from '../api'
 import PageHeader from '../components/PageHeader'
 import DataTable from '../components/DataTable'
 import StatusBadge from '../components/StatusBadge'
@@ -7,6 +7,49 @@ import StatusBadge from '../components/StatusBadge'
 export default function Patients() {
   const [selectedPatient, setSelectedPatient] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [patients, setPatients] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [patientPersons, setPatientPersons] = useState([])
+  const [patientTests, setPatientTests] = useState([])
+  const [patientBills, setPatientBills] = useState([])
+
+  useEffect(() => {
+    fetchPatients()
+  }, [])
+
+  useEffect(() => {
+    if (selectedPatient) {
+      fetchPatientDetails(selectedPatient.Patient_id)
+    }
+  }, [selectedPatient])
+
+  async function fetchPatients() {
+    try {
+      setLoading(true)
+      const data = await patientsApi.getAll()
+      setPatients(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function fetchPatientDetails(patientId) {
+    try {
+      const [persons, tests, bills] = await Promise.all([
+        personsApi.getByPatient(patientId),
+        testReportsApi.getByPatient(patientId),
+        billsApi.getAll()
+      ])
+      setPatientPersons(persons)
+      setPatientTests(tests)
+      setPatientBills(bills.filter(b => b.P_id === patientId))
+    } catch (err) {
+      console.error('Error fetching patient details:', err)
+    }
+  }
 
   const filteredPatients = patients.filter(
     p =>
@@ -42,16 +85,21 @@ export default function Patients() {
     },
   ]
 
-  const details = selectedPatient ? getPatientDetails(selectedPatient.Patient_id) : null
-  const patientPersons = selectedPatient
-    ? persons.filter(p => p.Patient_id === selectedPatient.Patient_id)
-    : []
-  const patientTests = selectedPatient
-    ? testReports.filter(t => t.Patient_id === selectedPatient.Patient_id)
-    : []
-  const patientBills = selectedPatient
-    ? bills.filter(b => b.P_id === selectedPatient.Patient_id)
-    : []
+  if (loading) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-slate-500">Loading patients...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -76,15 +124,15 @@ export default function Patients() {
         </div>
 
         {/* Details Modal */}
-        {selectedPatient && details && (
+        {selectedPatient && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
               <div className="p-6 border-b border-slate-200 flex justify-between items-start">
                 <div>
                   <h2 className="text-xl font-bold text-slate-800">
-                    {details.F_name} {details.L_name}
+                    {selectedPatient.F_name} {selectedPatient.L_name}
                   </h2>
-                  <p className="text-sm text-slate-500 mt-1">Patient ID: {details.Patient_id}</p>
+                  <p className="text-sm text-slate-500 mt-1">Patient ID: {selectedPatient.Patient_id}</p>
                 </div>
                 <button
                   onClick={() => setSelectedPatient(null)}
@@ -99,30 +147,30 @@ export default function Patients() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wider">Gender</p>
-                    <p className="text-sm font-medium text-slate-800">{details.Gender}</p>
+                    <p className="text-sm font-medium text-slate-800">{selectedPatient.Gender}</p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wider">Phone</p>
-                    <p className="text-sm font-medium text-slate-800">{details.Phone}</p>
+                    <p className="text-sm font-medium text-slate-800">{selectedPatient.Phone}</p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wider">Address</p>
-                    <p className="text-sm font-medium text-slate-800">{details.Address}</p>
+                    <p className="text-sm font-medium text-slate-800">{selectedPatient.Address}</p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wider">Room</p>
                     <p className="text-sm font-medium text-slate-800">
-                      {details.Room_no ? `Room ${details.Room_no} (${details.Room_Type})` : 'N/A'}
+                      {selectedPatient.Room_no ? `Room ${selectedPatient.Room_no} (${selectedPatient.Room_Type})` : 'N/A'}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wider">Admission Date</p>
-                    <p className="text-sm font-medium text-slate-800">{details.In_date}</p>
+                    <p className="text-sm font-medium text-slate-800">{selectedPatient.In_date}</p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wider">Discharge Date</p>
                     <p className="text-sm font-medium text-slate-800">
-                      {details.Out_date || 'Currently Admitted'}
+                      {selectedPatient.Out_date || 'Currently Admitted'}
                     </p>
                   </div>
                 </div>

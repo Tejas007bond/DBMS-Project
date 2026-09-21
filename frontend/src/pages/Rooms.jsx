@@ -1,24 +1,56 @@
-import { rooms, roomsB, patients, patientC, patientB } from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { roomsApi, patientsApi } from '../api'
 import PageHeader from '../components/PageHeader'
 import StatusBadge from '../components/StatusBadge'
 
 export default function Rooms() {
-  const roomsWithDetails = rooms.map(room => {
-    const roomB = roomsB.find(rb => rb.Capacity === room.Capacity)
-    const patientCEntry = patientC.find(pc => pc.Room_no === room.Room_no)
-    const patientBEntry = patientCEntry
-      ? patientB.find(pb => pb.Address === patientCEntry.Address)
-      : null
-    const patient = patientBEntry
-      ? patients.find(p => p.Phone === patientBEntry.Phone)
-      : null
+  const [roomsWithDetails, setRoomsWithDetails] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-    return {
-      ...room,
-      Availability: roomB?.Availability || 'Unknown',
-      Patient: patient ? `${patient.F_name} ${patient.L_name}` : null,
+  useEffect(() => {
+    fetchRooms()
+  }, [])
+
+  async function fetchRooms() {
+    try {
+      setLoading(true)
+      const [roomsData, patientsData] = await Promise.all([
+        roomsApi.getAll(),
+        patientsApi.getAll()
+      ])
+
+      const enrichedRooms = roomsData.map(room => {
+        const patient = patientsData.find(p => p.Room_no === room.Room_no)
+        return {
+          ...room,
+          Patient: patient ? `${patient.F_name} ${patient.L_name}` : null,
+        }
+      })
+
+      setRoomsWithDetails(enrichedRooms)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
-  })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-slate-500">Loading rooms...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -28,7 +60,7 @@ export default function Rooms() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
             <p className="text-sm text-slate-500">Total Rooms</p>
-            <p className="text-2xl font-bold text-slate-800">{rooms.length}</p>
+            <p className="text-2xl font-bold text-slate-800">{roomsWithDetails.length}</p>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
             <p className="text-sm text-slate-500">Available</p>

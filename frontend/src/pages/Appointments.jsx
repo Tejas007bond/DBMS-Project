@@ -1,20 +1,28 @@
-import { appointments, patients, getPatientConsultations } from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { appointmentsApi } from '../api'
 import PageHeader from '../components/PageHeader'
 import DataTable from '../components/DataTable'
 
 export default function Appointments() {
-  const consultations = getPatientConsultations()
+  const [enriched, setEnriched] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Merge appointment dates with consultation info
-  const enriched = appointments.map(apt => {
-    const consult = consultations.find(c => c.Patient_id === apt.P_id)
-    return {
-      ...apt,
-      Patient_Name: consult?.Patient_Name || 'Unknown',
-      Doctor_Name: consult?.Doctor_Name || 'Unknown',
-      Specialization: consult?.Specialization || 'N/A',
+  useEffect(() => {
+    fetchAppointments()
+  }, [])
+
+  async function fetchAppointments() {
+    try {
+      setLoading(true)
+      const data = await appointmentsApi.getAll()
+      setEnriched(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
-  })
+  }
 
   const columns = [
     { header: 'Appointment ID', key: 'Id' },
@@ -23,6 +31,22 @@ export default function Appointments() {
     { header: 'Doctor', key: 'Doctor_Name' },
     { header: 'Specialization', key: 'Specialization' },
   ]
+
+  if (loading) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-slate-500">Loading appointments...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 overflow-y-auto">

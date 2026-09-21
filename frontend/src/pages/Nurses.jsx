@@ -1,12 +1,46 @@
-import { useState } from 'react'
-import { getNursesWithInfo, nurseHandlesRooms, rooms } from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { nursesApi, roomsApi } from '../api'
 import PageHeader from '../components/PageHeader'
 import DataTable from '../components/DataTable'
 import StatusBadge from '../components/StatusBadge'
 
 export default function Nurses() {
   const [selectedNurse, setSelectedNurse] = useState(null)
-  const nursesInfo = getNursesWithInfo()
+  const [nursesInfo, setNursesInfo] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [nurseRooms, setNurseRooms] = useState([])
+
+  useEffect(() => {
+    fetchNurses()
+  }, [])
+
+  useEffect(() => {
+    if (selectedNurse) {
+      fetchNurseRooms(selectedNurse.Emp_id)
+    }
+  }, [selectedNurse])
+
+  async function fetchNurses() {
+    try {
+      setLoading(true)
+      const data = await nursesApi.getAll()
+      setNursesInfo(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function fetchNurseRooms(nurseId) {
+    try {
+      const rooms = await nursesApi.getRooms(nurseId)
+      setNurseRooms(rooms)
+    } catch (err) {
+      console.error('Error fetching nurse rooms:', err)
+    }
+  }
 
   const columns = [
     { header: 'ID', key: 'Emp_id' },
@@ -28,14 +62,21 @@ export default function Nurses() {
     },
   ]
 
-  const nurseRooms = selectedNurse
-    ? nurseHandlesRooms
-        .filter(n => n.Emp_id === selectedNurse.Emp_id)
-        .map(n => {
-          const room = rooms.find(r => r.Room_no === n.Room_no)
-          return { ...n, Type: room?.Type, Capacity: room?.Capacity }
-        })
-    : []
+  if (loading) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-slate-500">Loading nurses...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -98,7 +139,7 @@ export default function Nurses() {
                         <div key={i} className="flex justify-between py-1.5 border-b border-slate-200 last:border-0">
                           <span className="text-sm text-slate-700">Room {r.Room_no}</span>
                           <span className="text-sm text-slate-500">
-                            {r.Type} (Cap: {r.Capacity})
+                            {r.Room_Type} (Cap: {r.Capacity})
                           </span>
                         </div>
                       ))}

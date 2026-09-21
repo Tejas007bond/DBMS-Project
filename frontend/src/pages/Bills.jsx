@@ -1,20 +1,29 @@
-import { bills, patients, valid } from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { billsApi } from '../api'
 import PageHeader from '../components/PageHeader'
 import DataTable from '../components/DataTable'
 import StatusBadge from '../components/StatusBadge'
 
 export default function Bills() {
-  const enrichedBills = bills.map(b => {
-    const patient = patients.find(p => p.Patient_id === b.P_id)
-    const validEntry = valid.find(v => v.P_id === b.P_id)
-    const coveragePct = b.Amount > 0 ? ((b.I_amount / b.Amount) * 100).toFixed(1) : 0
-    return {
-      ...b,
-      Patient_Name: patient ? `${patient.F_name} ${patient.L_name}` : 'Unknown',
-      Coverage: coveragePct,
-      Insurance_Valid: validEntry?.Valid || 'Unknown',
+  const [enrichedBills, setEnrichedBills] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    fetchBills()
+  }, [])
+
+  async function fetchBills() {
+    try {
+      setLoading(true)
+      const data = await billsApi.getAll()
+      setEnrichedBills(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
-  })
+  }
 
   const columns = [
     { header: 'Bill ID', key: 'B_id' },
@@ -29,17 +38,17 @@ export default function Bills() {
     },
     {
       header: 'Coverage',
-      render: (_, row) => `${row.Coverage}%`,
+      render: (_, row) => `${row.Insurance_Coverage_Pct}%`,
     },
     {
       header: 'Insurance Valid',
       render: (_, row) => (
         <StatusBadge
-          status={row.Insurance_Valid}
+          status={row.Valid}
           type={
-            row.Insurance_Valid === 'Yes'
+            row.Valid === 'Yes'
               ? 'success'
-              : row.Insurance_Valid === 'No'
+              : row.Valid === 'No'
               ? 'danger'
               : 'warning'
           }
@@ -47,6 +56,22 @@ export default function Bills() {
       ),
     },
   ]
+
+  if (loading) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-slate-500">Loading bills...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 overflow-y-auto">

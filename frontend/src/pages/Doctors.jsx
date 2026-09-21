@@ -1,12 +1,30 @@
-import { useState } from 'react'
-import { getDoctorsWithInfo } from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { doctorsApi } from '../api'
 import PageHeader from '../components/PageHeader'
 import DataTable from '../components/DataTable'
 import StatusBadge from '../components/StatusBadge'
 
 export default function Doctors() {
   const [selectedDoctor, setSelectedDoctor] = useState(null)
-  const doctorsInfo = getDoctorsWithInfo()
+  const [doctorsInfo, setDoctorsInfo] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    fetchDoctors()
+  }, [])
+
+  async function fetchDoctors() {
+    try {
+      setLoading(true)
+      const data = await doctorsApi.getAll()
+      setDoctorsInfo(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const columns = [
     { header: 'ID', key: 'Emp_id' },
@@ -28,6 +46,22 @@ export default function Doctors() {
       ),
     },
   ]
+
+  if (loading) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-slate-500">Loading doctors...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 overflow-y-auto">

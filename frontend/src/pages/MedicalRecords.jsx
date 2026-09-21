@@ -1,33 +1,28 @@
-import {
-  medicalRecords,
-  recordHandlers,
-  patients,
-  getEmployeeById,
-  pharmacists,
-} from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { medicalRecordsApi } from '../api'
 import PageHeader from '../components/PageHeader'
 import DataTable from '../components/DataTable'
 
 export default function MedicalRecords() {
-  const enriched = medicalRecords.map(mr => {
-    const patient = patients.find(p => p.Patient_id === mr.P_id)
-    const handler = recordHandlers.find(
-      rh => rh.P_id === mr.P_id && rh.Purchase_date === mr.Purchase_date
-    )
-    const pharmacist = handler
-      ? pharmacists.find(p => p.Emp_id === handler.Emp_id)
-      : null
-    const pharmacistEmp = handler ? getEmployeeById(handler.Emp_id) : null
+  const [enriched, setEnriched] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-    return {
-      ...mr,
-      Patient_Name: patient ? `${patient.F_name} ${patient.L_name}` : 'Unknown',
-      Pharmacist_Name: pharmacistEmp
-        ? `${pharmacistEmp.F_name} ${pharmacistEmp.L_name}`
-        : 'N/A',
-      Clearance_level: pharmacist?.Clearance_level || 'N/A',
+  useEffect(() => {
+    fetchMedicalRecords()
+  }, [])
+
+  async function fetchMedicalRecords() {
+    try {
+      setLoading(true)
+      const data = await medicalRecordsApi.getAll()
+      setEnriched(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
-  })
+  }
 
   const columns = [
     { header: 'Record ID', key: 'R_id' },
@@ -36,6 +31,22 @@ export default function MedicalRecords() {
     { header: 'Handled By', key: 'Pharmacist_Name' },
     { header: 'Clearance', key: 'Clearance_level' },
   ]
+
+  if (loading) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-slate-500">Loading medical records...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 overflow-y-auto flex items-center justify-center">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 overflow-y-auto">

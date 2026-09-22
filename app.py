@@ -77,6 +77,17 @@ def manage_patients():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/api/patients/<int:patient_id>", methods=["DELETE"])
+def delete_patient_endpoint(patient_id):
+    """Deletes a patient and their associated records from Oracle DB."""
+    try:
+        result = db.delete_patient(patient_id)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+
 @app.route("/api/doctors", methods=["GET"])
 def get_doctors():
     """Fetches doctor roster with designations, specializations, and supervisors."""

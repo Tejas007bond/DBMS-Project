@@ -213,9 +213,37 @@ function renderPatientsTable(patients) {
         </td>
         <td>${statusBadge}</td>
         <td>${insValid}</td>
+        <td>
+          <button class="btn btn-xs btn-danger-outline" onclick="deletePatient(${p.patient_id}, '${p.f_name} ${p.l_name}')" title="Remove patient from Oracle DB">
+            🗑️ Remove
+          </button>
+        </td>
       </tr>
     `;
   }).join("");
+}
+
+async function deletePatient(patientId, patientName) {
+  if (!confirm(`Are you sure you want to remove patient "${patientName}" (ID: #${patientId}) from Oracle Database? This will also remove any linked appointments, bills, and test reports.`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/patients/${patientId}`, {
+      method: "DELETE"
+    });
+    const json = await res.json();
+
+    if (!json.success) {
+      alert("Error removing patient: " + (json.error || "Unknown error"));
+      return;
+    }
+
+    alert(`✅ ${json.message}`);
+    await loadAllData();
+  } catch (err) {
+    alert("Delete request failed: " + err.message);
+  }
 }
 
 function filterPatients(type, btn) {

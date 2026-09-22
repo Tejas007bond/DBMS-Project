@@ -964,3 +964,68 @@ def add_patient(patient_data):
     finally:
         conn.close()
 
+
+def delete_patient(patient_id):
+    """
+    Deletes a patient and their associated dependent records across all normalized tables in Oracle:
+    1. APPOINTMENT (where P_id = patient_id)
+    2. Appointment_B (where P_id = patient_id)
+    3. RECORD_HANDLER (where P_id = patient_id)
+    4. MEDICAL_RECORDS (where P_id = patient_id)
+    5. BILLS (where P_id = patient_id)
+    6. VALID (where P_id = patient_id)
+    7. TEST_REPORT (where Patient_id = patient_id)
+    8. PERSONS (where Patient_id = patient_id)
+    9. PATIENT (where Patient_id = patient_id)
+    10. Cleans up PATIENT_B and PATIENT_C if orphaned.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        
+        # Check patient exists and get phone
+        cur.execute("SELECT Phone, F_name, L_name FROM PATIENT WHERE Patient_id = :1", (patient_id,))
+        p_row = cur.fetchone()
+        if not p_row:
+            raise ValueError(f"Patient with ID #{patient_id} not found in database.")
+            
+        phone, f_name, l_name = p_row[0], p_row[1], p_row[2]
+        
+        # 1-8. Delete dependent child records
+        cur.execute("DELETE FROM APPOINTMENT WHERE P_id = :1", (patient_id,))
+        cur.execute("DELETE FROM Appointment_B WHERE P_id = :1", (patient_id,))
+        cur.execute("DELETE FROM RECORD_HANDLER WHERE P_id = :1", (patient_id,))
+        cur.execute("DELETE FROM MEDICAL_RECORDS WHERE P_id = :1", (patient_id,))
+        cur.execute("DELETE FROM BILLS WHERE P_id = :1", (patient_id,))
+        cur.execute("DELETE FROM VALID WHERE P_id = :1", (patient_id,))
+        cur.execute("DELETE FROM TEST_REPORT WHERE Patient_id = :1", (patient_id,))
+        cur.execute("DELETE FROM PERSONS WHERE Patient_id = :1", (patient_id,))
+        
+        # 9. Delete from PATIENT
+        cur.execute("DELETE FROM PATIENT WHERE Patient_id = :1", (patient_id,))
+        
+        # 10. Clean up PATIENT_B and PATIENT_C if orphaned
+        if phone:
+            cur.execute("SELECT COUNT(*) FROM PATIENT WHERE Phone = :1", (phone,))
+            if cur.fetchone()[0] == 0:
+                cur.execute("SELECT Address FROM PATIENT_B WHERE Phone = :1", (phone,))
+                addr_row = cur.fetchone()
+                cur.execute("DELETE FROM PATIENT_B WHERE Phone = :1", (phone,))
+                if addr_row and addr_row[0]:
+                    addr = addr_row[0]
+                    cur.execute("SELECT COUNT(*) FROM PATIENT_B WHERE Address = :1", (addr,))
+                    if cur.fetchone()[0] == 0:
+                        cur.execute("DELETE FROM PATIENT_C WHERE Address = :1", (addr,))
+                        
+        conn.commit()
+        return {
+            "success": True,
+            "message": f"Patient {f_name} {l_name} (ID: #{patient_id}) and all linked records removed from Oracle database successfully!"
+        }
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
+

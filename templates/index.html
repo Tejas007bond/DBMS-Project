@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hospital Management System | Oracle SQL Enterprise</title>
+  
+  <!-- Modern Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- ==========================================
+         SIDEBAR NAVIGATION
+         ========================================== -->
+    <aside class="app-sidebar">
+      <div class="brand-header">
+        <div class="brand-logo">
+          <span class="logo-pulse"></span>
+          <span class="logo-icon">🏥</span>
+        </div>
+        <div class="brand-text">
+          <h2>CarePulse HMS</h2>
+          <span class="badge-oracle">Oracle 11g XE</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">CORE MODULES</div>
+        
+        <button class="nav-item active" data-target="viewDashboard">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Dashboard</span>
+        </button>
+
+        <button class="nav-item" data-target="viewPatients">
+          <span class="nav-icon">🧑‍⚕️</span>
+          <span class="nav-text">Patients</span>
+          <span class="nav-badge" id="navBadgePatients">6</span>
+        </button>
+
+        <button class="nav-item" data-target="viewDoctors">
+          <span class="nav-icon">👨‍⚕️</span>
+          <span class="nav-text">Doctors</span>
+          <span class="nav-badge" id="navBadgeDoctors">5</span>
+        </button>
+
+        <button class="nav-item" data-target="viewNurses">
+          <span class="nav-icon">🩺</span>
+          <span class="nav-text">Nurses</span>
+          <span class="nav-badge" id="navBadgeNurses">5</span>
+        </button>
+
+        <button class="nav-item" data-target="viewPharmacists">
+          <span class="nav-icon">💊</span>
+          <span class="nav-text">Pharmacists</span>
+        </button>
+
+        <button class="nav-item" data-target="viewRooms">
+          <span class="nav-icon">🛏️</span>
+          <span class="nav-text">Rooms & Wards</span>
+        </button>
+
+        <button class="nav-item" data-target="viewBilling">
+          <span class="nav-icon">💳</span>
+          <span class="nav-text">Billing & Insurance</span>
+        </button>
+
+        <button class="nav-item" data-target="viewAppointments">
+          <span class="nav-icon">📅</span>
+          <span class="nav-text">Appointments & Tests</span>
+        </button>
+
+        <div class="nav-section-title">EER & SQL ENGINE</div>
+
+        <button class="nav-item highlight-nav" data-target="viewQueries">
+          <span class="nav-icon">⚡</span>
+          <span class="nav-text">Showcase SQL Queries</span>
+        </button>
+
+        <button class="nav-item" data-target="viewSqlRunner">
+          <span class="nav-icon">💻</span>
+          <span class="nav-text">Interactive SQL Runner</span>
+        </button>
+
+        <button class="nav-item" data-target="viewDatabase">
+          <span class="nav-icon">🗄️</span>
+          <span class="nav-text">Database & Schema</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="db-status-pill">
+          <div class="db-status-indicator">
+            <span class="status-dot pulse" id="sidebarDbDot"></span>
+            <div class="db-status-labels">
+              <span class="db-status-title" id="sidebarDbText">Connecting...</span>
+              <span class="db-status-sub" id="sidebarDbSub">localhost:1521 / XE</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==========================================
+         MAIN VIEWPORT
+         ========================================== -->
+    <main class="app-main">
+      
+      <!-- Top Navigation Bar -->
+      <header class="app-topbar">
+        <div class="topbar-left">
+          <div class="breadcrumb">
+            <span class="breadcrumb-root">Hospital Management</span>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current" id="breadcrumbCurrent">Dashboard</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div id="topbarDbBadge" class="status-badge badge-success">
+            <span class="status-dot connected"></span> Oracle Connected
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="refreshAllData()">
+            🔄 Refresh Data
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable Content Area -->
+      <div class="content-container">
+
+        <!-- ==========================================
+             VIEW 1: DASHBOARD
+             ========================================== -->
+        <section id="viewDashboard" class="view-panel active">
+          <!-- Welcome Banner -->
+          <div class="welcome-banner">
+            <div class="welcome-content">
+              <h2>Healthcare Operations Hub</h2>
+              <p>Live synchronized records with Oracle 11g XE Normalized Relational Database</p>
+            </div>
+            <div class="welcome-actions">
+              <button class="btn btn-primary" onclick="navigateTo('viewQueries')">⚡ View 5 SQL Queries</button>
+              <button class="btn btn-outline" onclick="navigateTo('viewPatients')">Manage Patients</button>
+            </div>
+          </div>
+
+          <!-- KPI Cards Grid -->
+          <div class="kpi-grid">
+            <div class="kpi-card card-blue">
+              <div class="kpi-header">
+                <span class="kpi-title">Total Patients</span>
+                <span class="kpi-icon">🧑‍⚕️</span>
+              </div>
+              <div class="kpi-value" id="kpiTotalPatients">6</div>
+              <div class="kpi-footer">
+                <span class="kpi-tag tag-success" id="kpiActivePatients">4 Currently Admitted</span>
+                <span class="kpi-sub" id="kpiDischargedPatients">2 Discharged</span>
+              </div>
+            </div>
+
+            <div class="kpi-card card-teal">
+              <div class="kpi-header">
+                <span class="kpi-title">Medical Staff</span>
+                <span class="kpi-icon">👨‍⚕️</span>
+              </div>
+              <div class="kpi-value" id="kpiTotalStaff">15</div>
+              <div class="kpi-footer">
+                <span class="kpi-tag">5 Doctors</span>
+                <span class="kpi-tag">5 Nurses</span>
+                <span class="kpi-tag">5 Pharmacists</span>
+              </div>
+            </div>
+
+            <div class="kpi-card card-purple">
+              <div class="kpi-header">
+                <span class="kpi-title">Rooms & Beds</span>
+                <span class="kpi-icon">🛏️</span>
+              </div>
+              <div class="kpi-value" id="kpiTotalRooms">6</div>
+              <div class="kpi-footer">
+                <span class="kpi-tag tag-success" id="kpiAvailableRooms">5 Available</span>
+                <span class="kpi-sub">ICU, Ward, General, Private</span>
+              </div>
+            </div>
+
+            <div class="kpi-card card-amber">
+              <div class="kpi-header">
+                <span class="kpi-title">Billed Revenue</span>
+                <span class="kpi-icon">💳</span>
+              </div>
+              <div class="kpi-value" id="kpiTotalRevenue">$22,250</div>
+              <div class="kpi-footer">
+                <span class="kpi-tag tag-info" id="kpiTotalInsurance">$14,750 Insured</span>
+                <span class="kpi-sub">5 Invoices</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Navigation Cards & Showcase Highlight -->
+          <div class="dashboard-grid-split">
+            <!-- Left: Showcase Queries Preview -->
+            <div class="card card-elevated">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">⚡ 5 Core EER SQL Queries (Click to Run)</h3>
+                  <p class="card-subtitle">Real queries executed against live Oracle database</p>
+                </div>
+                <button class="btn btn-sm btn-outline" onclick="navigateTo('viewQueries')">View All →</button>
+              </div>
+
+              <div class="quick-queries-list">
+                <div class="query-preview-item" onclick="openQueryDetail('query_1')">
+                  <div class="query-preview-icon">1</div>
+                  <div class="query-preview-info">
+                    <h4>Basic Filtering (WHERE clause)</h4>
+                    <code>SELECT Room_no, Capacity FROM ROOMS WHERE Type = 'General'</code>
+                  </div>
+                  <button class="btn btn-xs btn-primary">Run</button>
+                </div>
+
+                <div class="query-preview-item" onclick="openQueryDetail('query_2')">
+                  <div class="query-preview-icon">2</div>
+                  <div class="query-preview-info">
+                    <h4>Finding Missing Data (IS NULL)</h4>
+                    <code>SELECT Patient_id, F_name, L_name, In_date FROM PATIENT WHERE Out_date IS NULL</code>
+                  </div>
+                  <button class="btn btn-xs btn-primary">Run</button>
+                </div>
+
+                <div class="query-preview-item" onclick="openQueryDetail('query_3')">
+                  <div class="query-preview-icon">3</div>
+                  <div class="query-preview-info">
+                    <h4>Simple Aggregation (GROUP BY)</h4>
+                    <code>SELECT Shift_type, COUNT(Emp_id) AS Total_Nurses FROM NURSE GROUP BY Shift_type</code>
+                  </div>
+                  <button class="btn btn-xs btn-primary">Run</button>
+                </div>
+
+                <div class="query-preview-item" onclick="openQueryDetail('query_4')">
+                  <div class="query-preview-icon">4</div>
+                  <div class="query-preview-info">
+                    <h4>Sorting Data (ORDER BY)</h4>
+                    <code>SELECT Emp_id, F_name, L_name, Age FROM EMPLOYEE WHERE Age > 40 ORDER BY Age DESC</code>
+                  </div>
+                  <button class="btn btn-xs btn-primary">Run</button>
+                </div>
+
+                <div class="query-preview-item" onclick="openQueryDetail('query_5')">
+                  <div class="query-preview-icon">5</div>
+                  <div class="query-preview-info">
+                    <h4>Simple 2-Table JOIN</h4>
+                    <code>SELECT e.F_name, e.L_name, p.Clearance_level FROM EMPLOYEE e JOIN PHARMACIST p ON e.Emp_id = p.Emp_id</code>
+                  </div>
+                  <button class="btn btn-xs btn-primary">Run</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: System Structure & EER Relationships -->
+            <div class="card card-elevated">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">🗄️ Normalized Schema Architecture</h3>
+                  <p class="card-subtitle">EER mapping implemented in Oracle</p>
+                </div>
+              </div>
+
+              <div class="schema-chips-container">
+                <div class="schema-chip">
+                  <span class="chip-dot"></span>
+                  <strong>PATIENT Chain:</strong> PATIENT → PATIENT_B (Phone) → PATIENT_C (Address/Room)
+                </div>
+                <div class="schema-chip">
+                  <span class="chip-dot"></span>
+                  <strong>EMPLOYEE Hierarchy:</strong> DOCTOR (Recursive Supervision), NURSE, PHARMACIST
+                </div>
+                <div class="schema-chip">
+                  <span class="chip-dot"></span>
+                  <strong>ROOM Chain:</strong> ROOMS_B (Capacity, Availability) → ROOMS (Type, No)
+                </div>
+                <div class="schema-chip">
+                  <span class="chip-dot"></span>
+                  <strong>Weak Entities:</strong> PERSONS, TEST_REPORT, BILLS (via VALID)
+                </div>
+                <div class="schema-chip">
+                  <span class="chip-dot"></span>
+                  <strong>M:N Associations:</strong> Appointment_B, RECORD_HANDLER, NURSE_HANDLES_ROOMS
+                </div>
+              </div>
+
+              <div class="live-connection-box">
+                <div class="conn-item">
+                  <span class="conn-lbl">Database:</span>
+                  <span class="conn-val">Oracle 11g XE</span>
+                </div>
+                <div class="conn-item">
+                  <span class="conn-lbl">Active User:</span>
+                  <span class="conn-val mono">SHUBHAM</span>
+                </div>
+                <div class="conn-item">
+                  <span class="conn-lbl">Driver Mode:</span>
+                  <span class="conn-val">Thick (Instant Client)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ==========================================
+             VIEW 2: PATIENTS
+             ========================================== -->
+        <section id="viewPatients" class="view-panel">
+          <div class="card">
+            <div class="card-header flex-between">
+              <div>
+                <h3 class="card-title">🧑‍⚕️ Patient Directory & Admissions</h3>
+                <p class="card-subtitle">Normalized tables: <code>PATIENT</code>, <code>PATIENT_B</code>, <code>PATIENT_C</code>, <code>ROOMS</code></p>
+              </div>
+              <div class="filter-group">
+                <button class="btn btn-sm btn-filter active" onclick="filterPatients('all', this)">All (6)</button>
+                <button class="btn btn-sm btn-filter" onclick="filterPatients('admitted', this)">Admitted (4)</button>
+                <button class="btn btn-sm btn-filter" onclick="filterPatients('discharged', this)">Discharged (2)</button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table" id="patientsTable">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Patient Name</th>
+                    <th>Gender</th>
+                    <th>Phone</th>
+                    <th>Residential Address</th>
+                    <th>Assigned Room</th>
+                    <th>Consulting Doctor</th>
+                    <th>Admission Date</th>
+                    <th>Status</th>
+                    <th>Bill Status</th>
+                  </tr>
+                </thead>
+                <tbody id="patientsTableBody">
+                  <tr><td colspan="10" class="text-center">Loading live Oracle data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ==========================================
+             VIEW 3: DOCTORS
+             ========================================== -->
+        <section id="viewDoctors" class="view-panel">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">👨‍⚕️ Medical Specialists & Hierarchy</h3>
+                <p class="card-subtitle">Inherited from <code>EMPLOYEE</code> with recursive supervision hierarchy in <code>DOCTOR</code></p>
+              </div>
+            </div>
+
+            <div class="doctors-grid" id="doctorsGrid">
+              <div class="text-center">Loading doctors...</div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ==========================================
+             VIEW 4: NURSES
+             ========================================== -->
+        <section id="viewNurses" class="view-panel">
+          <div class="card">
+            <div class="card-header flex-between">
+              <div>
+                <h3 class="card-title">🩺 Nursing Staff & Shift Coordination</h3>
+                <p class="card-subtitle">Subclass of <code>EMPLOYEE</code> with M:N handled rooms from <code>NURSE_HANDLES_ROOMS</code></p>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table" id="nursesTable">
+                <thead>
+                  <tr>
+                    <th>Emp ID</th>
+                    <th>Nurse Name</th>
+                    <th>Contact</th>
+                    <th>Address</th>
+                    <th>Age</th>
+                    <th>Shift Type</th>
+                    <th>Handled Rooms</th>
+                  </tr>
+                </thead>
+                <tbody id="nursesTableBody">
+                  <tr><td colspan="7" class="text-center">Loading live nurses...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ==========================================
+             VIEW 5: PHARMACISTS
+             ========================================== -->
+        <section id="viewPharmacists" class="view-panel">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">💊 Pharmacy & Medical Records Team</h3>
+                <p class="card-subtitle">Subclass of <code>EMPLOYEE</code> managing records in <code>RECORD_HANDLER</code></p>
+              </div>
+            </div>
+
+            <div class="pharmacists-grid" id="pharmacistsGrid">
+              <div class="text-center">Loading pharmacists...</div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ==========================================
+             VIEW 6: ROOMS & WARDS
+             ========================================== -->
+        <section id="viewRooms" class="view-panel">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">🛏️ Hospital Rooms & Ward Inventory</h3>
+                <p class="card-subtitle">Normalized chain: <code>ROOMS</code> → <code>ROOMS_B</code> (Capacity, Availability)</p>
+              </div>
+            </div>
+
+            <div class="rooms-grid" id="roomsGrid">
+              <div class="text-center">Loading rooms...</div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ==========================================
+             VIEW 7: BILLING & INSURANCE
+             ========================================== -->
+        <section id="viewBilling" class="view-panel">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">💳 Patient Billing & Insurance Settlements</h3>
+                <p class="card-subtitle">Weak entity <code>BILLS</code> referencing <code>VALID</code> insurance authorization</p>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table" id="billingTable">
+                <thead>
+                  <tr>
+                    <th>Bill ID</th>
+                    <th>Patient ID</th>
+                    <th>Patient Name</th>
+                    <th>Total Invoiced</th>
+                    <th>Insurance Covered</th>
+                    <th>Patient Co-Pay</th>
+                    <th>Insurance Validation</th>
+                  </tr>
+                </thead>
+                <tbody id="billingTableBody">
+                  <tr><td colspan="7" class="text-center">Loading billing data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ==========================================
+             VIEW 8: APPOINTMENTS & TESTS
+             ========================================== -->
+        <section id="viewAppointments" class="view-panel">
+          <div class="grid-two">
+            <!-- Left: Appointments -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">📅 Appointments Schedule</h3>
+                  <p class="card-subtitle"><code>APPOINTMENT</code> & <code>Appointment_B</code></p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Appt ID</th>
+                      <th>Date</th>
+                      <th>Patient</th>
+                      <th>Doctor</th>
+                    </tr>
+                  </thead>
+                  <tbody id="appointmentsTableBody">
+                    <tr><td colspan="4" class="text-center">Loading appointments...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Test Reports -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">🧪 Diagnostic Test Reports</h3>
+                  <p class="card-subtitle">Weak entity <code>TEST_REPORT</code></p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Report ID</th>
+                      <th>Patient</th>
+                      <th>Test Type</th>
+                      <th>Result</th>
+                    </tr>
+                  </thead>
+                  <tbody id="testReportsTableBody">
+                    <tr><td colspan="4" class="text-center">Loading test reports...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ==========================================
+             VIEW 9: SHOWCASE SQL QUERIES (THE 5 QUERIES)
+             ========================================== -->
+        <section id="viewQueries" class="view-panel">
+          <div class="card card-elevated">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">⚡ 5 Demonstration Oracle SQL Queries</h3>
+                <p class="card-subtitle">Select any query below to run it against your Oracle Database in real-time</p>
+              </div>
+            </div>
+
+            <!-- Query Selection Tabs -->
+            <div class="query-tabs" id="queryTabs">
+              <button class="query-tab-btn active" onclick="selectQuery('query_1', this)">1. Basic Filtering (WHERE)</button>
+              <button class="query-tab-btn" onclick="selectQuery('query_2', this)">2. Missing Data (IS NULL)</button>
+              <button class="query-tab-btn" onclick="selectQuery('query_3', this)">3. Simple Aggregation (GROUP BY)</button>
+              <button class="query-tab-btn" onclick="selectQuery('query_4', this)">4. Sorting Data (ORDER BY)</button>
+              <button class="query-tab-btn" onclick="selectQuery('query_5', this)">5. Simple 2-Table JOIN</button>
+            </div>
+
+            <!-- Active Query Showcase Card -->
+            <div class="query-active-display">
+              <div class="query-info-box">
+                <div class="flex-between align-center">
+                  <h4 id="activeQueryTitle" class="active-query-heading">1. Basic Filtering (WHERE clause)</h4>
+                  <button class="btn btn-primary" id="btnExecuteDemo" onclick="runActiveDemoQuery()">
+                    ▶ Execute on Oracle
+                  </button>
+                </div>
+                <p id="activeQueryDesc" class="active-query-explanation">
+                  This query retrieves the room numbers and capacities of all rooms that are specifically designated as 'General' wards.
+                </p>
+
+                <!-- SQL Editor / Display -->
+                <div class="sql-code-block">
+                  <div class="sql-code-header">
+                    <span>SQL Query</span>
+                    <button class="btn-copy-code" onclick="copyActiveSql()">📋 Copy SQL</button>
+                  </div>
+                  <pre><code id="activeQuerySql">SELECT Room_no, Capacity FROM ROOMS WHERE Type = 'General';</code></pre>
+                </div>
+              </div>
+
+              <!-- Live Results Display -->
+              <div class="query-result-box">
+                <div class="flex-between align-center query-result-header">
+                  <h4>Query Execution Results</h4>
+                  <div class="result-stats" id="queryStats">
+                    <span class="badge-tag" id="queryDurationBadge">Duration: -- ms</span>
+                    <span class="badge-tag" id="queryRowsBadge">Rows: --</span>
+                  </div>
+                </div>
+
+                <div class="table-responsive" style="max-height: 350px;">
+                  <table class="data-table query-results-table" id="queryResultTable">
+                    <thead id="queryResultThead">
+                      <tr><th>Run query to view output</th></tr>
+                    </thead>
+                    <tbody id="queryResultTbody">
+                      <tr><td class="text-center text-muted">Click "Execute on Oracle" above to execute this SQL query</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ==========================================
+             VIEW 10: INTERACTIVE SQL RUNNER
+             ========================================== -->
+        <section id="viewSqlRunner" class="view-panel">
+          <div class="card card-elevated">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">💻 Interactive Oracle SQL Query Console</h3>
+                <p class="card-subtitle">Run your custom <code>SELECT</code> queries live against the connected Oracle database</p>
+              </div>
+            </div>
+
+            <div class="custom-sql-container">
+              <textarea id="customSqlInput" class="sql-textarea" rows="4" placeholder="Enter your SQL query here, e.g. SELECT * FROM EMPLOYEE WHERE Age > 35">SELECT p.Patient_id, p.F_name, p.L_name, r.Type AS Room, d_emp.F_name AS Doctor
+FROM PATIENT p
+JOIN PATIENT_B pb ON p.Phone = pb.Phone
+JOIN PATIENT_C pc ON pb.Address = pc.Address
+JOIN ROOMS r ON pc.Room_no = r.Room_no
+LEFT JOIN Appointment_B ab ON p.Patient_id = ab.P_id
+LEFT JOIN DOCTOR d ON ab.D_id = d.Emp_id
+LEFT JOIN EMPLOYEE d_emp ON d.Emp_id = d_emp.Emp_id</textarea>
+
+              <div class="flex-between align-center mt-2">
+                <div class="quick-sample-queries">
+                  <span style="font-size: 13px; color: var(--text-secondary); margin-right: 8px;">Sample Queries:</span>
+                  <button class="btn btn-xs btn-outline" onclick="loadSampleSql(1)">General Rooms</button>
+                  <button class="btn btn-xs btn-outline" onclick="loadSampleSql(2)">Admitted Patients</button>
+                  <button class="btn btn-xs btn-outline" onclick="loadSampleSql(3)">Nurses per Shift</button>
+                  <button class="btn btn-xs btn-outline" onclick="loadSampleSql(4)">Doctors & Supervisors</button>
+                </div>
+                <button class="btn btn-primary" onclick="runCustomSqlQuery()">▶ Run Custom Query</button>
+              </div>
+
+              <!-- Custom Query Output -->
+              <div class="query-result-box mt-3" id="customQueryResultBox" style="display:none;">
+                <div class="flex-between align-center query-result-header">
+                  <h4>Results</h4>
+                  <div class="result-stats">
+                    <span class="badge-tag" id="customDurationBadge">Duration: 0ms</span>
+                    <span class="badge-tag" id="customRowsBadge">0 Rows</span>
+                  </div>
+                </div>
+
+                <div class="table-responsive" style="max-height: 400px;">
+                  <table class="data-table query-results-table" id="customResultTable">
+                    <thead id="customResultThead"></thead>
+                    <tbody id="customResultTbody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ==========================================
+             VIEW 11: DATABASE DIAGNOSTICS & RESEED
+             ========================================== -->
+        <section id="viewDatabase" class="view-panel">
+          <div class="grid-two">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">🗄️ Database Status & Diagnostics</h3>
+                <span id="diagStatusBadge" class="status-badge badge-success">CONNECTED</span>
+              </div>
+
+              <table class="diag-table">
+                <tbody>
+                  <tr>
+                    <td>Database Flavor</td>
+                    <td class="mono-text">Oracle Database 11g Express Edition</td>
+                  </tr>
+                  <tr>
+                    <td>Oracle Host</td>
+                    <td id="diagHost" class="mono-text">localhost</td>
+                  </tr>
+                  <tr>
+                    <td>Oracle Port</td>
+                    <td id="diagPort" class="mono-text">1521</td>
+                  </tr>
+                  <tr>
+                    <td>Oracle Service / SID</td>
+                    <td id="diagService" class="mono-text">XE</td>
+                  </tr>
+                  <tr>
+                    <td>Schema User</td>
+                    <td id="diagUser" class="mono-text">SHUBHAM</td>
+                  </tr>
+                  <tr>
+                    <td>Database Version</td>
+                    <td id="diagVersion" class="mono-text">11.2.0.2.0</td>
+                  </tr>
+                  <tr>
+                    <td>Connection Mode</td>
+                    <td class="mono-text">Thick Mode (Instant Client 19.32)</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="mt-3 flex-gap">
+                <button class="btn btn-primary" onclick="checkDatabaseStatus()">🔄 Test Connection</button>
+                <button class="btn btn-danger-outline" onclick="triggerReseed()">⚠️ Re-seed & Reset Database</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">📊 Database Tables Summary (18 Tables)</h3>
+              </div>
+
+              <div class="schema-table-list">
+                <div class="schema-row"><span>PATIENT</span><span class="badge-count">6 rows</span></div>
+                <div class="schema-row"><span>PATIENT_B</span><span class="badge-count">6 rows</span></div>
+                <div class="schema-row"><span>PATIENT_C</span><span class="badge-count">6 rows</span></div>
+                <div class="schema-row"><span>EMPLOYEE</span><span class="badge-count">15 rows</span></div>
+                <div class="schema-row"><span>DOCTOR</span><span class="badge-count">5 rows</span></div>
+                <div class="schema-row"><span>NURSE</span><span class="badge-count">5 rows</span></div>
+                <div class="schema-row"><span>PHARMACIST</span><span class="badge-count">5 rows</span></div>
+                <div class="schema-row"><span>ROOMS</span><span class="badge-count">6 rows</span></div>
+                <div class="schema-row"><span>ROOMS_B</span><span class="badge-count">5 rows</span></div>
+                <div class="schema-row"><span>PERSONS</span><span class="badge-count">6 rows</span></div>
+                <div class="schema-row"><span>TEST_REPORT</span><span class="badge-count">6 rows</span></div>
+                <div class="schema-row"><span>VALID</span><span class="badge-count">6 rows</span></div>
+                <div class="schema-row"><span>BILLS</span><span class="badge-count">5 rows</span></div>
+                <div class="schema-row"><span>MEDICAL_RECORDS</span><span class="badge-count">5 rows</span></div>
+                <div class="schema-row"><span>RECORD_HANDLER</span><span class="badge-count">5 rows</span></div>
+                <div class="schema-row"><span>APPOINTMENT</span><span class="badge-count">5 rows</span></div>
+                <div class="schema-row"><span>Appointment_B</span><span class="badge-count">6 rows</span></div>
+                <div class="schema-row"><span>NURSE_HANDLES_ROOMS</span><span class="badge-count">7 rows</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

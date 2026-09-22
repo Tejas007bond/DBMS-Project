@@ -59,9 +59,17 @@ def dashboard_summary():
 # ==========================================
 # Domain Entities API Routes (Live Oracle Queries)
 # ==========================================
-@app.route("/api/patients", methods=["GET"])
-def get_patients():
-    """Fetches all patients joined across normalized address and room chains."""
+@app.route("/api/patients", methods=["GET", "POST"])
+def manage_patients():
+    """Fetches all patients or creates a new patient in Oracle DB."""
+    if request.method == "POST":
+        try:
+            patient_data = request.get_json() or {}
+            result = db.add_patient(patient_data)
+            return jsonify(result), 201
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 400
+            
     try:
         data = db.get_all_patients()
         return jsonify({"success": True, "data": data, "count": len(data)})

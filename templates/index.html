@@ -325,10 +325,15 @@
                 <h3 class="card-title">🧑‍⚕️ Patient Directory & Admissions</h3>
                 <p class="card-subtitle">Normalized tables: <code>PATIENT</code>, <code>PATIENT_B</code>, <code>PATIENT_C</code>, <code>ROOMS</code></p>
               </div>
-              <div class="filter-group">
-                <button class="btn btn-sm btn-filter active" onclick="filterPatients('all', this)">All (6)</button>
-                <button class="btn btn-sm btn-filter" onclick="filterPatients('admitted', this)">Admitted (4)</button>
-                <button class="btn btn-sm btn-filter" onclick="filterPatients('discharged', this)">Discharged (2)</button>
+              <div class="flex-gap align-center">
+                <div class="filter-group">
+                  <button class="btn btn-sm btn-filter active" onclick="filterPatients('all', this)">All (6)</button>
+                  <button class="btn btn-sm btn-filter" onclick="filterPatients('admitted', this)">Admitted (4)</button>
+                  <button class="btn btn-sm btn-filter" onclick="filterPatients('discharged', this)">Discharged (2)</button>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openAddPatientModal()">
+                  ➕ Add Patient
+                </button>
               </div>
             </div>
 
@@ -746,6 +751,133 @@ LEFT JOIN EMPLOYEE d_emp ON d.Emp_id = d_emp.Emp_id</textarea>
 
       </div>
     </main>
+  </div>
+
+  <!-- ==========================================
+       MODAL: ADD NEW PATIENT
+       ========================================== -->
+  <div class="modal-backdrop" id="addPatientModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">🧑‍⚕️ Add New Patient to Oracle DB</h3>
+          <p class="modal-subtitle">Automatically maps across normalized tables: PATIENT, PATIENT_B, PATIENT_C, VALID, BILLS</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeAddPatientModal()">&times;</button>
+      </div>
+
+      <form id="addPatientForm" onsubmit="handlePatientFormSubmit(event)">
+        <div class="modal-body">
+          <div class="form-grid">
+            <!-- First Name -->
+            <div class="form-group">
+              <label class="form-label">First Name <span class="required">*</span></label>
+              <input type="text" id="patientFname" class="form-input" placeholder="e.g. Peter" required>
+            </div>
+
+            <!-- Last Name -->
+            <div class="form-group">
+              <label class="form-label">Last Name <span class="required">*</span></label>
+              <input type="text" id="patientLname" class="form-input" placeholder="e.g. Parker" required>
+            </div>
+
+            <!-- Gender -->
+            <div class="form-group">
+              <label class="form-label">Gender <span class="required">*</span></label>
+              <select id="patientGender" class="form-select" required>
+                <option value="M">Male (M)</option>
+                <option value="F">Female (F)</option>
+              </select>
+            </div>
+
+            <!-- Contact Phone -->
+            <div class="form-group">
+              <label class="form-label">Phone Number <span class="required">*</span></label>
+              <input type="text" id="patientPhone" class="form-input mono" placeholder="e.g. 555-2007" required>
+              <small class="form-hint">Stored in PATIENT_B table</small>
+            </div>
+
+            <!-- Address -->
+            <div class="form-group full-width">
+              <label class="form-label">Residential Address <span class="required">*</span></label>
+              <input type="text" id="patientAddress" class="form-input" placeholder="e.g. 20 Ingram St, Queens, NY" required>
+              <small class="form-hint">Stored in PATIENT_C table</small>
+            </div>
+
+            <!-- Assigned Room -->
+            <div class="form-group">
+              <label class="form-label">Assign Room</label>
+              <select id="patientRoom" class="form-select">
+                <option value="">-- Select Room --</option>
+                <option value="101">Room 101 (ICU - 1 Bed)</option>
+                <option value="102">Room 102 (General - 2 Beds)</option>
+                <option value="103">Room 103 (General - 3 Beds)</option>
+                <option value="104">Room 104 (Private - 1 Bed)</option>
+                <option value="105">Room 105 (Ward - 4 Beds)</option>
+                <option value="106">Room 106 (Maternity - 2 Beds)</option>
+              </select>
+            </div>
+
+            <!-- Consulting Doctor -->
+            <div class="form-group">
+              <label class="form-label">Consulting Doctor</label>
+              <select id="patientDoctor" class="form-select">
+                <option value="">-- Select Doctor --</option>
+                <option value="1">Dr. Gregory House (Diagnostics)</option>
+                <option value="2">Dr. Derek Shepherd (Neurology)</option>
+                <option value="3">Dr. Allison Cameron (Immunology)</option>
+                <option value="4">Dr. Stephen Strange (Neurosurgery)</option>
+                <option value="5">Dr. Meredith Grey (General Surgery)</option>
+              </select>
+            </div>
+
+            <!-- In Date -->
+            <div class="form-group">
+              <label class="form-label">Admission Date (In Date)</label>
+              <input type="date" id="patientInDate" class="form-input" required>
+            </div>
+
+            <!-- Out Date (Optional) -->
+            <div class="form-group">
+              <label class="form-label">Discharge Date (Out Date)</label>
+              <input type="date" id="patientOutDate" class="form-input">
+              <small class="form-hint">Leave blank if currently admitted</small>
+            </div>
+
+            <!-- Insurance Validation -->
+            <div class="form-group">
+              <label class="form-label">Insurance Authorization</label>
+              <select id="patientInsurance" class="form-select">
+                <option value="Yes">Yes (Approved)</option>
+                <option value="No">No (Uninsured)</option>
+                <option value="Pending">Pending (Under Review)</option>
+              </select>
+            </div>
+
+            <!-- Initial Bill Amount -->
+            <div class="form-group">
+              <label class="form-label">Initial Invoice ($ Amount)</label>
+              <input type="number" step="0.01" id="patientBillAmount" class="form-input" placeholder="e.g. 2500.00">
+            </div>
+
+            <!-- Insurance Coverage Amount -->
+            <div class="form-group">
+              <label class="form-label">Insurance Covered ($ Amount)</label>
+              <input type="number" step="0.01" id="patientInsuranceAmount" class="form-input" placeholder="e.g. 2000.00">
+            </div>
+          </div>
+
+          <div id="patientFormError" class="form-error-banner" style="display:none;"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeAddPatientModal()">Cancel</button>
+          <button type="submit" id="btnSubmitPatient" class="btn btn-primary">
+            💾 Save Patient to Oracle
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- JavaScript -->

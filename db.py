@@ -499,3 +499,109 @@ def run_demo_query(query_id):
         "row_count": result["row_count"],
         "duration_ms": result["duration_ms"]
     }
+
+
+def add_patient(patient_data):
+    """
+    Inserts a new patient record into the normalized Oracle database schema:
+    1. PATIENT_C (Address, Room_no)
+    2. PATIENT_B (Phone, Address)
+    3. PATIENT (Patient_id, F_name, L_name, Gender, Phone, In_date, Out_date)
+    4. VALID (P_id, Valid)
+    5. Appointment_B & APPOINTMENT (P_id, D_id) [if doctor selected]
+    6. BILLS (B_id, P_id, Amount, I_amount) [if bill amount entered]
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        
+        # 1. Generate next Patient_id
+        cur.execute("SELECT NVL(MAX(Patient_id), 1000) + 1 FROM PATIENT")
+        patient_id = int(cur.fetchone()[0])
+        
+        f_name = patient_data.get("f_name", "").strip()
+        l_name = patient_data.get("l_name", "").strip()
+        gender = patient_data.get("gender", "M").strip()
+        phone = patient_data.get("phone", "").strip()
+        address = patient_data.get("address", "").strip()
+        
+        room_no = int(patient_data["room_no"]) if patient_data.get("room_no") else None
+        doctor_id = int(patient_data["doctor_id"]) if patient_data.get("doctor_id") else None
+        
+        in_date_str = patient_data.get("in_date") or datetime.now().strftime("%Y-%m-%d")
+        out_date_str = patient_data.get("out_date") if patient_data.get("out_date") else None
+        
+        insurance_valid = patient_data.get("insurance_valid", "Yes").strip()
+        bill_amount = float(patient_data["bill_amount"]) if patient_data.get("bill_amount") else None
+        i_amount = float(patient_data.get("i_amount", 0.0)) if patient_data.get("i_amount") else 0.0
+
+        if not f_name or not l_name:
+            raise ValueError("First Name and Last Name are required.")
+        if not phone:
+            raise ValueError("Phone number is required.")
+        if not address:
+            raise ValueError("Address is required.")
+
+        # 2. Insert into PATIENT_C
+        cur.execute("SELECT COUNT(*) FROM PATIENT_C WHERE Address = :1", (address,))
+        if cur.fetchone()[0] == 0:
+            cur.execute("INSERT INTO PATIENT_C (Address, Room_no) VALUES (:1, :2)", (address, room_no))
+        else:
+            if room_no is not None:
+                cur.execute("UPDATE PATIENT_C SET Room_no = :1 WHERE Address = :2", (room_no, address))
+                
+        # 3. Insert into PATIENT_B
+        cur.execute("SELECT COUNT(*) FROM PATIENT_B WHERE Phone = :1", (phone,))
+        if cur.fetchone()[0] == 0:
+            cur.execute("INSERT INTO PATIENT_B (Phone, Address) VALUES (:1, :2)", (phone, address))
+        else:
+            cur.execute("UPDATE PATIENT_B SET Address = :1 WHERE Phone = :2", (address, phone))
+            
+        # 4. Insert into PATIENT
+        if out_date_str:
+            cur.execute("""
+                INSERT INTO PATIENT (Patient_id, F_name, L_name, Gender, Phone, In_date, Out_date)
+                VALUES (:1, :2, :3, :4, :5, TO_DATE(:6, 'YYYY-MM-DD'), TO_DATE(:7, 'YYYY-MM-DD'))
+            """, (patient_id, f_name, l_name, gender, phone, in_date_str, out_date_str))
+        else:
+            cur.execute("""
+                INSERT INTO PATIENT (Patient_id, F_name, L_name, Gender, Phone, In_date, Out_date)
+                VALUES (:1, :2, :3, :4, :5, TO_DATE(:6, 'YYYY-MM-DD'), NULL)
+            """, (patient_id, f_name, l_name, gender, phone, in_date_str))
+            
+        # 5. Insert into VALID
+        cur.execute("INSERT INTO VALID (P_id, Valid) VALUES (:1, :2)", (patient_id, insurance_valid))
+        
+        # 6. Insert into Appointment_B (if doctor selected)
+        if doctor_id:
+            cur.execute("INSERT INTO Appointment_B (P_id, D_id) VALUES (:1, :2)", (patient_id, doctor_id))
+            
+            # Also create an entry in APPOINTMENT
+            cur.execute("SELECT NVL(MAX(Id), 2000) + 1 FROM APPOINTMENT")
+            appt_id = int(cur.fetchone()[0])
+            cur.execute("""
+                INSERT INTO APPOINTMENT (Id, App_date, P_id)
+                VALUES (:1, TO_DATE(:2, 'YYYY-MM-DD'), :3)
+            """, (appt_id, in_date_str, patient_id))
+
+        # 7. Insert into BILLS (if bill amount provided)
+        if bill_amount is not None and bill_amount > 0:
+            cur.execute("SELECT NVL(MAX(B_id), 800) + 1 FROM BILLS")
+            bill_id = int(cur.fetchone()[0])
+            cur.execute("""
+                INSERT INTO BILLS (B_id, P_id, Amount, I_amount)
+                VALUES (:1, :2, :3, :4)
+            """, (bill_id, patient_id, bill_amount, i_amount))
+            
+        conn.commit()
+        return {
+            "success": True,
+            "patient_id": patient_id,
+            "message": f"Patient {f_name} {l_name} (ID: #{patient_id}) added to Oracle database successfully!"
+        }
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+

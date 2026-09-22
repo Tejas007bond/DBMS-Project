@@ -673,3 +673,110 @@ async function triggerReseed() {
     alert("Reseed request failed: " + err.message);
   }
 }
+
+/**
+ * 12. Add Patient Modal Operations
+ */
+function openAddPatientModal() {
+  const modal = document.getElementById("addPatientModal");
+  const form = document.getElementById("addPatientForm");
+  const errBanner = document.getElementById("patientFormError");
+  const inDateInput = document.getElementById("patientInDate");
+
+  if (form) form.reset();
+  if (errBanner) {
+    errBanner.style.display = "none";
+    errBanner.textContent = "";
+  }
+
+  // Default admission date to today (YYYY-MM-DD)
+  if (inDateInput) {
+    const today = new Date().toISOString().split("T")[0];
+    inDateInput.value = today;
+  }
+
+  if (modal) modal.classList.add("active");
+}
+
+function closeAddPatientModal() {
+  const modal = document.getElementById("addPatientModal");
+  if (modal) modal.classList.remove("active");
+}
+
+// Close modal on escape or backdrop click
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeAddPatientModal();
+});
+
+document.addEventListener("click", (e) => {
+  const modal = document.getElementById("addPatientModal");
+  if (modal && e.target === modal) {
+    closeAddPatientModal();
+  }
+});
+
+async function handlePatientFormSubmit(event) {
+  event.preventDefault();
+
+  const submitBtn = document.getElementById("btnSubmitPatient");
+  const errBanner = document.getElementById("patientFormError");
+
+  const payload = {
+    f_name: document.getElementById("patientFname").value.trim(),
+    l_name: document.getElementById("patientLname").value.trim(),
+    gender: document.getElementById("patientGender").value,
+    phone: document.getElementById("patientPhone").value.trim(),
+    address: document.getElementById("patientAddress").value.trim(),
+    room_no: document.getElementById("patientRoom").value || null,
+    doctor_id: document.getElementById("patientDoctor").value || null,
+    in_date: document.getElementById("patientInDate").value || null,
+    out_date: document.getElementById("patientOutDate").value || null,
+    insurance_valid: document.getElementById("patientInsurance").value,
+    bill_amount: document.getElementById("patientBillAmount").value || null,
+    i_amount: document.getElementById("patientInsuranceAmount").value || null
+  };
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "⏳ Saving to Oracle...";
+  }
+  if (errBanner) errBanner.style.display = "none";
+
+  try {
+    const res = await fetch("/api/patients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const json = await res.json();
+
+    if (!json.success) {
+      if (errBanner) {
+        errBanner.style.display = "block";
+        errBanner.textContent = "Error: " + (json.error || "Failed to create patient.");
+      }
+      return;
+    }
+
+    // Success
+    closeAddPatientModal();
+    alert(`✅ Success: ${json.message}`);
+
+    // Refresh all views and stay on Patients tab
+    await loadAllData();
+    navigateTo("viewPatients");
+
+  } catch (err) {
+    if (errBanner) {
+      errBanner.style.display = "block";
+      errBanner.textContent = "Network error: " + err.message;
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = "💾 Save Patient to Oracle";
+    }
+  }
+}
+

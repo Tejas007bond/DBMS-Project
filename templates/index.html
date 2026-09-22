@@ -546,24 +546,33 @@
 
 
         <!-- ==========================================
-             VIEW 9: SHOWCASE SQL QUERIES (THE 5 QUERIES)
+             VIEW 9: SHOWCASE SQL QUERIES (FULL SCHEMA & DEMOS)
              ========================================== -->
         <section id="viewQueries" class="view-panel">
           <div class="card card-elevated">
             <div class="card-header">
               <div>
-                <h3 class="card-title">⚡ 5 Demonstration Oracle SQL Queries</h3>
-                <p class="card-subtitle">Select any query below to run it against your Oracle Database in real-time</p>
+                <h3 class="card-title">⚡ Oracle Database SQL Engine & Showcase</h3>
+                <p class="card-subtitle">Explore the complete database scripts from DDL schema creation and seed data to the 5 core EER queries</p>
               </div>
             </div>
 
             <!-- Query Selection Tabs -->
-            <div class="query-tabs" id="queryTabs">
-              <button class="query-tab-btn active" onclick="selectQuery('query_1', this)">1. Basic Filtering (WHERE)</button>
-              <button class="query-tab-btn" onclick="selectQuery('query_2', this)">2. Missing Data (IS NULL)</button>
-              <button class="query-tab-btn" onclick="selectQuery('query_3', this)">3. Simple Aggregation (GROUP BY)</button>
-              <button class="query-tab-btn" onclick="selectQuery('query_4', this)">4. Sorting Data (ORDER BY)</button>
-              <button class="query-tab-btn" onclick="selectQuery('query_5', this)">5. Simple 2-Table JOIN</button>
+            <div class="query-tabs-wrapper">
+              <div class="query-tab-group-label">FULL DATABASE SCRIPTS:</div>
+              <div class="query-tabs">
+                <button class="query-tab-btn" onclick="selectQuery('schema_master', this)">📜 Master SQL Script (Full Database)</button>
+                <button class="query-tab-btn" onclick="selectQuery('schema_ddl', this)">🏗️ Full Schema DDL (18 Tables)</button>
+                <button class="query-tab-btn" onclick="selectQuery('schema_inserts', this)">📥 Full Seed Data (Inserts)</button>
+              </div>
+              <div class="query-tab-group-label mt-2">EER DEMONSTRATION QUERIES:</div>
+              <div class="query-tabs" id="queryTabs">
+                <button class="query-tab-btn active" onclick="selectQuery('query_1', this)">1. Basic Filtering (WHERE)</button>
+                <button class="query-tab-btn" onclick="selectQuery('query_2', this)">2. Missing Data (IS NULL)</button>
+                <button class="query-tab-btn" onclick="selectQuery('query_3', this)">3. Simple Aggregation (GROUP BY)</button>
+                <button class="query-tab-btn" onclick="selectQuery('query_4', this)">4. Sorting Data (ORDER BY)</button>
+                <button class="query-tab-btn" onclick="selectQuery('query_5', this)">5. Simple 2-Table JOIN</button>
+              </div>
             </div>
 
             <!-- Active Query Showcase Card -->

@@ -855,13 +855,23 @@ body {
 /* ==========================================================================
    SQL SHOWCASE & RUNNER VIEWS
    ========================================================================== */
+.query-tabs-wrapper {
+  margin-bottom: 24px;
+}
+
+.query-tab-group-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
 .query-tabs {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 12px;
-  margin-bottom: 24px;
+  padding-bottom: 8px;
 }
 
 .query-tab-btn {
@@ -944,9 +954,11 @@ body {
   padding: 16px;
   margin: 0;
   color: #38bdf8;
-  font-size: 13px;
+  font-size: 12.5px;
   line-height: 1.6;
   overflow-x: auto;
+  max-height: 420px;
+  overflow-y: auto;
 }
 
 .query-result-box {

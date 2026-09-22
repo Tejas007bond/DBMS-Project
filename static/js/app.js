@@ -515,13 +515,12 @@ async function loadDemoQueries() {
 function selectQuery(queryId, tabBtn) {
   activeQueryId = queryId;
 
+  document.querySelectorAll(".query-tab-btn").forEach(b => b.classList.remove("active"));
   if (tabBtn) {
-    document.querySelectorAll(".query-tab-btn").forEach(b => b.classList.remove("active"));
     tabBtn.classList.add("active");
   } else {
-    const targetTab = Array.from(document.querySelectorAll(".query-tab-btn")).find(b => b.textContent.includes(queryId.replace("query_", "")));
+    const targetTab = Array.from(document.querySelectorAll(".query-tab-btn")).find(b => b.getAttribute("onclick") && b.getAttribute("onclick").includes(queryId));
     if (targetTab) {
-      document.querySelectorAll(".query-tab-btn").forEach(b => b.classList.remove("active"));
       targetTab.classList.add("active");
     }
   }

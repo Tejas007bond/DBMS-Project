@@ -2,19 +2,42 @@ import { useState, useEffect } from 'react'
 import { roomsApi, patientsApi } from '../api'
 import PageHeader from '../components/PageHeader'
 import StatusBadge from '../components/StatusBadge'
+import AddButton from '../components/AddButton'
+import DeleteButton from '../components/DeleteButton'
+import FormModal from '../components/FormModal'
+import ConfirmDialog from '../components/ConfirmDialog'
+
+const formFields = [
+  { key: 'Room_no', label: 'Room No', type: 'number', required: true },
+  { key: 'Capacity', label: 'Capacity', type: 'number', required: true },
+  {
+    key: 'Type',
+    label: 'Room Type',
+    type: 'select',
+    options: ['ICU', 'General', 'Private', 'Ward', 'Maternity'],
+  },
+  {
+    key: 'Availability',
+    label: 'Availability',
+    type: 'select',
+    options: ['Available', 'Full', 'Maintenance'],
+  },
+]
 
 export default function Rooms() {
   const [roomsWithDetails, setRoomsWithDetails] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showAdd, setShowAdd] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   useEffect(() => {
     fetchRooms()
   }, [])
 
-  async function fetchRooms() {
+  async function fetchRooms(silent = false) {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       const [roomsData, patientsData] = await Promise.all([
         roomsApi.getAll(),
         patientsApi.getAll()
@@ -32,8 +55,18 @@ export default function Rooms() {
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
+  }
+
+  async function handleAdd(values) {
+    await roomsApi.create(values)
+    await fetchRooms(true)
+  }
+
+  async function handleDelete() {
+    await roomsApi.delete(deleteTarget.Room_no)
+    await fetchRooms(true)
   }
 
   if (loading) {
@@ -54,7 +87,11 @@ export default function Rooms() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <PageHeader title="Rooms" subtitle="View all rooms, their capacity and availability" />
+      <PageHeader
+        title="Rooms"
+        subtitle="View all rooms, their capacity and availability"
+        action={<AddButton label="Add Room" onClick={() => setShowAdd(true)} />}
+      />
       <div className="p-8">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -111,10 +148,32 @@ export default function Rooms() {
                   </span>
                 </div>
               </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+                <DeleteButton onClick={() => setDeleteTarget(room)} />
+              </div>
             </div>
           ))}
         </div>
       </div>
+
+      {showAdd && (
+        <FormModal
+          title="Add Room"
+          fields={formFields}
+          onSubmit={handleAdd}
+          onClose={() => setShowAdd(false)}
+          submitLabel="Add Room"
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Delete Room"
+          message={`Are you sure you want to delete room ${deleteTarget.Room_no}? This cannot be undone.`}
+          onConfirm={handleDelete}
+          onClose={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   )
 }

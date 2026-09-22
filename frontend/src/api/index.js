@@ -141,6 +141,22 @@ export const validApi = {
   delete: (patientId) => fetchApi(`/valid/${patientId}`, { method: 'DELETE' }),
 };
 
+// SQL Explorer API
+export const sqlApi = {
+  getQueries: ({ verb, endpoint, limit } = {}) => {
+    const params = new URLSearchParams();
+    if (verb) params.set('verb', verb);
+    if (endpoint) params.set('endpoint', endpoint);
+    if (limit) params.set('limit', limit);
+    const qs = params.toString();
+    return fetchApi(`/sql/queries${qs ? `?${qs}` : ''}`);
+  },
+  clearQueries: () => fetchApi('/sql/queries', { method: 'DELETE' }),
+  getTables: () => fetchApi('/sql/tables'),
+  getTableRows: (name, { limit = 100, offset = 0 } = {}) =>
+    fetchApi(`/sql/tables/${encodeURIComponent(name)}?limit=${limit}&offset=${offset}`),
+};
+
 // Employees API
 export const employeesApi = {
   getAll: () => fetchApi('/employees'),

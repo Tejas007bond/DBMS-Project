@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { initializeDb, closeDb } from './db/index.js';
+import { queryContext } from './db/queryLog.js';
 
 // Import routes
 import employeesRouter from './routes/employees.js';
@@ -16,6 +17,7 @@ import medicalRecordsRouter from './routes/medicalRecords.js';
 import personsRouter from './routes/persons.js';
 import validRouter from './routes/valid.js';
 import dashboardRouter from './routes/dashboard.js';
+import sqlRouter from './routes/sql.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -23,6 +25,11 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Tag every query executed during a request with its endpoint (for the SQL log)
+app.use((req, res, next) => {
+  queryContext.run({ method: req.method, path: req.originalUrl }, next);
+});
 
 // Routes
 app.use('/api/employees', employeesRouter);
@@ -38,6 +45,7 @@ app.use('/api/medical-records', medicalRecordsRouter);
 app.use('/api/persons', personsRouter);
 app.use('/api/valid', validRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/sql', sqlRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

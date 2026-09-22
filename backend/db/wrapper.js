@@ -1,6 +1,7 @@
 // Wrapper to make sql.js work with better-sqlite3 style API in routes
 
 import { getDb, saveDb } from './index.js';
+import { recordQuery } from './queryLog.js';
 
 class DatabaseWrapper {
   constructor(db) {
@@ -12,6 +13,7 @@ class DatabaseWrapper {
     return {
       run(...params) {
         self.db.run(sql, params);
+        recordQuery(sql, params, self.db.getRowsModified());
         saveDb();
       },
       get(...params) {

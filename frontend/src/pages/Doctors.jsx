@@ -3,27 +3,56 @@ import { doctorsApi } from '../api'
 import PageHeader from '../components/PageHeader'
 import DataTable from '../components/DataTable'
 import StatusBadge from '../components/StatusBadge'
+import AddButton from '../components/AddButton'
+import DeleteButton from '../components/DeleteButton'
+import FormModal from '../components/FormModal'
+import ConfirmDialog from '../components/ConfirmDialog'
+
+const formFields = [
+  { key: 'Emp_id', label: 'Employee ID', type: 'number', required: true },
+  { key: 'F_name', label: 'First Name', required: true },
+  { key: 'L_name', label: 'Last Name', required: true },
+  { key: 'Gender', label: 'Gender', type: 'select', options: ['M', 'F'] },
+  { key: 'Age', label: 'Age', type: 'number' },
+  { key: 'Contact_no', label: 'Contact No', placeholder: '555-0000' },
+  { key: 'Address', label: 'Address', wide: true },
+  { key: 'Specialization', label: 'Specialization' },
+  { key: 'Designation', label: 'Designation' },
+  { key: 'Supervisor_id', label: 'Supervisor ID', type: 'number' },
+]
 
 export default function Doctors() {
   const [selectedDoctor, setSelectedDoctor] = useState(null)
   const [doctorsInfo, setDoctorsInfo] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showAdd, setShowAdd] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   useEffect(() => {
     fetchDoctors()
   }, [])
 
-  async function fetchDoctors() {
+  async function fetchDoctors(silent = false) {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       const data = await doctorsApi.getAll()
       setDoctorsInfo(data)
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
+  }
+
+  async function handleAdd(values) {
+    await doctorsApi.create(values)
+    await fetchDoctors(true)
+  }
+
+  async function handleDelete() {
+    await doctorsApi.delete(deleteTarget.Emp_id)
+    await fetchDoctors(true)
   }
 
   const columns = [
@@ -37,12 +66,15 @@ export default function Doctors() {
     {
       header: 'Actions',
       render: (_, row) => (
-        <button
-          onClick={() => setSelectedDoctor(row)}
-          className="text-primary-600 hover:text-primary-800 text-sm font-medium"
-        >
-          View Details
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setSelectedDoctor(row)}
+            className="text-primary-600 hover:text-primary-800 text-sm font-medium"
+          >
+            View Details
+          </button>
+          <DeleteButton onClick={() => setDeleteTarget(row)} />
+        </div>
       ),
     },
   ]
@@ -65,11 +97,34 @@ export default function Doctors() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <PageHeader title="Doctors" subtitle="View all doctors and their specializations" />
+      <PageHeader
+        title="Doctors"
+        subtitle="View all doctors and their specializations"
+        action={<AddButton label="Add Doctor" onClick={() => setShowAdd(true)} />}
+      />
       <div className="p-8">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <DataTable columns={columns} data={doctorsInfo} />
         </div>
+
+        {showAdd && (
+          <FormModal
+            title="Add Doctor"
+            fields={formFields}
+            onSubmit={handleAdd}
+            onClose={() => setShowAdd(false)}
+            submitLabel="Add Doctor"
+          />
+        )}
+
+        {deleteTarget && (
+          <ConfirmDialog
+            title="Delete Doctor"
+            message={`Are you sure you want to delete Dr. ${deleteTarget.F_name} ${deleteTarget.L_name}? This cannot be undone.`}
+            onConfirm={handleDelete}
+            onClose={() => setDeleteTarget(null)}
+          />
+        )}
 
         {selectedDoctor && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">

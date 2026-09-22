@@ -1,8 +1,28 @@
 import { useState, useEffect } from 'react'
-import { nursesApi, roomsApi } from '../api'
+import { nursesApi } from '../api'
 import PageHeader from '../components/PageHeader'
 import DataTable from '../components/DataTable'
 import StatusBadge from '../components/StatusBadge'
+import AddButton from '../components/AddButton'
+import DeleteButton from '../components/DeleteButton'
+import FormModal from '../components/FormModal'
+import ConfirmDialog from '../components/ConfirmDialog'
+
+const formFields = [
+  { key: 'Emp_id', label: 'Employee ID', type: 'number', required: true },
+  { key: 'F_name', label: 'First Name', required: true },
+  { key: 'L_name', label: 'Last Name', required: true },
+  { key: 'Gender', label: 'Gender', type: 'select', options: ['M', 'F'] },
+  { key: 'Age', label: 'Age', type: 'number' },
+  { key: 'Contact_no', label: 'Contact No', placeholder: '555-0000' },
+  { key: 'Address', label: 'Address', wide: true },
+  {
+    key: 'Shift_type',
+    label: 'Shift',
+    type: 'select',
+    options: ['Morning', 'Evening', 'Night'],
+  },
+]
 
 export default function Nurses() {
   const [selectedNurse, setSelectedNurse] = useState(null)
@@ -10,6 +30,8 @@ export default function Nurses() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [nurseRooms, setNurseRooms] = useState([])
+  const [showAdd, setShowAdd] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   useEffect(() => {
     fetchNurses()
@@ -21,16 +43,26 @@ export default function Nurses() {
     }
   }, [selectedNurse])
 
-  async function fetchNurses() {
+  async function fetchNurses(silent = false) {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       const data = await nursesApi.getAll()
       setNursesInfo(data)
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
+  }
+
+  async function handleAdd(values) {
+    await nursesApi.create(values)
+    await fetchNurses(true)
+  }
+
+  async function handleDelete() {
+    await nursesApi.delete(deleteTarget.Emp_id)
+    await fetchNurses(true)
   }
 
   async function fetchNurseRooms(nurseId) {
@@ -52,12 +84,15 @@ export default function Nurses() {
     {
       header: 'Actions',
       render: (_, row) => (
-        <button
-          onClick={() => setSelectedNurse(row)}
-          className="text-primary-600 hover:text-primary-800 text-sm font-medium"
-        >
-          View Details
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setSelectedNurse(row)}
+            className="text-primary-600 hover:text-primary-800 text-sm font-medium"
+          >
+            View Details
+          </button>
+          <DeleteButton onClick={() => setDeleteTarget(row)} />
+        </div>
       ),
     },
   ]
@@ -80,11 +115,32 @@ export default function Nurses() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <PageHeader title="Nurses" subtitle="View all nurses and their shift assignments" />
+      <PageHeader title="Nurses"        subtitle="View all nurses and their shift assignments"
+        action={<AddButton label="Add Nurse" onClick={() => setShowAdd(true)} />}
+      />
       <div className="p-8">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <DataTable columns={columns} data={nursesInfo} />
         </div>
+
+        {showAdd && (
+          <FormModal
+            title="Add Nurse"
+            fields={formFields}
+            onSubmit={handleAdd}
+            onClose={() => setShowAdd(false)}
+            submitLabel="Add Nurse"
+          />
+        )}
+
+        {deleteTarget && (
+          <ConfirmDialog
+            title="Delete Nurse"
+            message={`Are you sure you want to delete ${deleteTarget.F_name} ${deleteTarget.L_name}? This cannot be undone.`}
+            onConfirm={handleDelete}
+            onClose={() => setDeleteTarget(null)}
+          />
+        )}
 
         {selectedNurse && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">

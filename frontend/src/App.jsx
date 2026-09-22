@@ -10,6 +10,7 @@ import Appointments from './pages/Appointments'
 import Bills from './pages/Bills'
 import TestReports from './pages/TestReports'
 import MedicalRecords from './pages/MedicalRecords'
+import SqlExplorer from './pages/SqlExplorer'
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="/bills" element={<Bills />} />
           <Route path="/test-reports" element={<TestReports />} />
           <Route path="/medical-records" element={<MedicalRecords />} />
+          <Route path="/sql" element={<SqlExplorer />} />
         </Route>
       </Routes>
     </BrowserRouter>

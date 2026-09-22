@@ -3,6 +3,28 @@ import { patientsApi, personsApi, testReportsApi, billsApi } from '../api'
 import PageHeader from '../components/PageHeader'
 import DataTable from '../components/DataTable'
 import StatusBadge from '../components/StatusBadge'
+import AddButton from '../components/AddButton'
+import DeleteButton from '../components/DeleteButton'
+import FormModal from '../components/FormModal'
+import ConfirmDialog from '../components/ConfirmDialog'
+
+const formFields = [
+  { key: 'Patient_id', label: 'Patient ID', type: 'number', required: true },
+  { key: 'F_name', label: 'First Name', required: true },
+  { key: 'L_name', label: 'Last Name', required: true },
+  { key: 'Gender', label: 'Gender', type: 'select', options: ['M', 'F'] },
+  { key: 'Phone', label: 'Phone', placeholder: '555-0000' },
+  { key: 'In_date', label: 'Admission Date', type: 'date' },
+  { key: 'Out_date', label: 'Discharge Date', type: 'date' },
+  { key: 'Room_no', label: 'Room No', type: 'number' },
+  { key: 'Address', label: 'Address', wide: true },
+  {
+    key: 'Valid',
+    label: 'Insurance Valid',
+    type: 'select',
+    options: ['Yes', 'No', 'Pending'],
+  },
+]
 
 export default function Patients() {
   const [selectedPatient, setSelectedPatient] = useState(null)
@@ -13,6 +35,8 @@ export default function Patients() {
   const [patientPersons, setPatientPersons] = useState([])
   const [patientTests, setPatientTests] = useState([])
   const [patientBills, setPatientBills] = useState([])
+  const [showAdd, setShowAdd] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   useEffect(() => {
     fetchPatients()
@@ -24,15 +48,15 @@ export default function Patients() {
     }
   }, [selectedPatient])
 
-  async function fetchPatients() {
+  async function fetchPatients(silent = false) {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       const data = await patientsApi.getAll()
       setPatients(data)
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
@@ -49,6 +73,16 @@ export default function Patients() {
     } catch (err) {
       console.error('Error fetching patient details:', err)
     }
+  }
+
+  async function handleAdd(values) {
+    await patientsApi.create(values)
+    await fetchPatients(true)
+  }
+
+  async function handleDelete() {
+    await patientsApi.delete(deleteTarget.Patient_id)
+    await fetchPatients(true)
   }
 
   const filteredPatients = patients.filter(
@@ -75,12 +109,15 @@ export default function Patients() {
     {
       header: 'Actions',
       render: (_, row) => (
-        <button
-          onClick={() => setSelectedPatient(row)}
-          className="text-primary-600 hover:text-primary-800 text-sm font-medium"
-        >
-          View Details
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setSelectedPatient(row)}
+            className="text-primary-600 hover:text-primary-800 text-sm font-medium"
+          >
+            View Details
+          </button>
+          <DeleteButton onClick={() => setDeleteTarget(row)} />
+        </div>
       ),
     },
   ]
@@ -106,6 +143,7 @@ export default function Patients() {
       <PageHeader
         title="Patients"
         subtitle="Manage and view all hospital patients"
+        action={<AddButton label="Add Patient" onClick={() => setShowAdd(true)} />}
       />
       <div className="p-8">
         {/* Search */}
@@ -122,6 +160,25 @@ export default function Patients() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <DataTable columns={columns} data={filteredPatients} />
         </div>
+
+        {showAdd && (
+          <FormModal
+            title="Add Patient"
+            fields={formFields}
+            onSubmit={handleAdd}
+            onClose={() => setShowAdd(false)}
+            submitLabel="Add Patient"
+          />
+        )}
+
+        {deleteTarget && (
+          <ConfirmDialog
+            title="Delete Patient"
+            message={`Are you sure you want to delete ${deleteTarget.F_name} ${deleteTarget.L_name}? This also removes their related records and cannot be undone.`}
+            onConfirm={handleDelete}
+            onClose={() => setDeleteTarget(null)}
+          />
+        )}
 
         {/* Details Modal */}
         {selectedPatient && (

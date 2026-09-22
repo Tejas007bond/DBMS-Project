@@ -11,6 +11,7 @@ import {
   FlaskConical,
   FileText,
   Activity,
+  Database,
 } from 'lucide-react'
 
 const navItems = [
@@ -24,6 +25,7 @@ const navItems = [
   { to: '/bills', icon: Receipt, label: 'Bills' },
   { to: '/test-reports', icon: FlaskConical, label: 'Test Reports' },
   { to: '/medical-records', icon: FileText, label: 'Medical Records' },
+  { to: '/sql', icon: Database, label: 'SQL Explorer' },
 ]
 
 export default function Layout() {

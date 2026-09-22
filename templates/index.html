@@ -147,8 +147,8 @@
               <p>Live synchronized records with Oracle 11g XE Normalized Relational Database</p>
             </div>
             <div class="welcome-actions">
-              <button class="btn btn-primary" onclick="navigateTo('viewQueries')">⚡ View 5 SQL Queries</button>
-              <button class="btn btn-outline" onclick="navigateTo('viewPatients')">Manage Patients</button>
+              <button class="btn btn-primary" onclick="navigateTo('viewPatients')">🧑‍⚕️ Manage Patients</button>
+              <button class="btn btn-outline" onclick="navigateTo('viewRooms')">🛏️ Rooms & Wards</button>
             </div>
           </div>
 
@@ -204,62 +204,61 @@
             </div>
           </div>
 
-          <!-- Quick Navigation Cards & Showcase Highlight -->
+          <!-- Hospital Operations & Schema Architecture -->
           <div class="dashboard-grid-split">
-            <!-- Left: Showcase Queries Preview -->
+            <!-- Left: Hospital Modules Overview -->
             <div class="card card-elevated">
               <div class="card-header">
                 <div>
-                  <h3 class="card-title">⚡ 5 Core EER SQL Queries (Click to Run)</h3>
-                  <p class="card-subtitle">Real queries executed against live Oracle database</p>
+                  <h3 class="card-title">🏥 Hospital Operations & Directory</h3>
+                  <p class="card-subtitle">Direct access to live healthcare management modules</p>
                 </div>
-                <button class="btn btn-sm btn-outline" onclick="navigateTo('viewQueries')">View All →</button>
               </div>
 
               <div class="quick-queries-list">
-                <div class="query-preview-item" onclick="openQueryDetail('query_1')">
-                  <div class="query-preview-icon">1</div>
+                <div class="query-preview-item" onclick="navigateTo('viewPatients')">
+                  <div class="query-preview-icon" style="background: #0284c7;">🧑‍⚕️</div>
                   <div class="query-preview-info">
-                    <h4>Basic Filtering (WHERE clause)</h4>
-                    <code>SELECT Room_no, Capacity FROM ROOMS WHERE Type = 'General'</code>
+                    <h4>Patients Directory & Admissions</h4>
+                    <span style="font-size: 12px; color: var(--text-secondary);">Manage admissions, demographics, room assignments, and clinical status</span>
                   </div>
-                  <button class="btn btn-xs btn-primary">Run</button>
+                  <button class="btn btn-xs btn-outline">Open →</button>
                 </div>
 
-                <div class="query-preview-item" onclick="openQueryDetail('query_2')">
-                  <div class="query-preview-icon">2</div>
+                <div class="query-preview-item" onclick="navigateTo('viewDoctors')">
+                  <div class="query-preview-icon" style="background: #0d9488;">👨‍⚕️</div>
                   <div class="query-preview-info">
-                    <h4>Finding Missing Data (IS NULL)</h4>
-                    <code>SELECT Patient_id, F_name, L_name, In_date FROM PATIENT WHERE Out_date IS NULL</code>
+                    <h4>Physicians & Specialists</h4>
+                    <span style="font-size: 12px; color: var(--text-secondary);">Consultants, departments, specializations, and supervision chain</span>
                   </div>
-                  <button class="btn btn-xs btn-primary">Run</button>
+                  <button class="btn btn-xs btn-outline">Open →</button>
                 </div>
 
-                <div class="query-preview-item" onclick="openQueryDetail('query_3')">
-                  <div class="query-preview-icon">3</div>
+                <div class="query-preview-item" onclick="navigateTo('viewNurses')">
+                  <div class="query-preview-icon" style="background: #10b981;">🩺</div>
                   <div class="query-preview-info">
-                    <h4>Simple Aggregation (GROUP BY)</h4>
-                    <code>SELECT Shift_type, COUNT(Emp_id) AS Total_Nurses FROM NURSE GROUP BY Shift_type</code>
+                    <h4>Nursing Staff & Duty Roster</h4>
+                    <span style="font-size: 12px; color: var(--text-secondary);">Morning, Evening, and Night shift coverage and handled wards</span>
                   </div>
-                  <button class="btn btn-xs btn-primary">Run</button>
+                  <button class="btn btn-xs btn-outline">Open →</button>
                 </div>
 
-                <div class="query-preview-item" onclick="openQueryDetail('query_4')">
-                  <div class="query-preview-icon">4</div>
+                <div class="query-preview-item" onclick="navigateTo('viewRooms')">
+                  <div class="query-preview-icon" style="background: #7c3aed;">🛏️</div>
                   <div class="query-preview-info">
-                    <h4>Sorting Data (ORDER BY)</h4>
-                    <code>SELECT Emp_id, F_name, L_name, Age FROM EMPLOYEE WHERE Age > 40 ORDER BY Age DESC</code>
+                    <h4>Rooms & Bed Occupancy</h4>
+                    <span style="font-size: 12px; color: var(--text-secondary);">ICU, General, Ward, and Maternity bed inventory and current inpatients</span>
                   </div>
-                  <button class="btn btn-xs btn-primary">Run</button>
+                  <button class="btn btn-xs btn-outline">Open →</button>
                 </div>
 
-                <div class="query-preview-item" onclick="openQueryDetail('query_5')">
-                  <div class="query-preview-icon">5</div>
+                <div class="query-preview-item" onclick="navigateTo('viewBilling')">
+                  <div class="query-preview-icon" style="background: #d97706;">💳</div>
                   <div class="query-preview-info">
-                    <h4>Simple 2-Table JOIN</h4>
-                    <code>SELECT e.F_name, e.L_name, p.Clearance_level FROM EMPLOYEE e JOIN PHARMACIST p ON e.Emp_id = p.Emp_id</code>
+                    <h4>Billing & Insurance Settlements</h4>
+                    <span style="font-size: 12px; color: var(--text-secondary);">Patient invoices, insurance approvals, and out-of-pocket settlements</span>
                   </div>
-                  <button class="btn btn-xs btn-primary">Run</button>
+                  <button class="btn btn-xs btn-outline">Open →</button>
                 </div>
               </div>
             </div>
